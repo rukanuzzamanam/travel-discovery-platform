@@ -13,7 +13,7 @@ const schema = z.object({
   TRAVELPOUTS_PROJECT_ID: z.string().optional(),
   TRAVELPOUTS_WHITE_LABEL_URL: z.string().url().optional().or(z.literal("")),
   AI_API_KEY: z.string().optional(),
-  AI_MODEL: z.string().default("claude-sonnet-5"),
+  AI_MODEL: z.string().default("claude-opus-5"),
   NEXT_PUBLIC_SITE_URL: z.string().url().default("http://localhost:3000"),
 });
 
@@ -34,3 +34,8 @@ export function env(): Env {
 }
 
 export const isProd = () => process.env.NODE_ENV === "production";
+
+/** Test helper: forget the memoised parse so changed process.env values are re-read. */
+export function resetEnvCache() {
+  cached = undefined;
+}

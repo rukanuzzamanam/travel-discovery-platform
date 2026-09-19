@@ -16,4 +16,6 @@ export const NAV = [
   { href: "/guides", label: "Guides" },
 ] as const;
 
+export const DEFAULT_ORIGIN = "SYD";
+
 export const absoluteUrl = (path = "/") => `${SITE.url}${path.startsWith("/") ? path : `/${path}`}`;

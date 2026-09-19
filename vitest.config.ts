@@ -12,7 +12,7 @@ export default defineConfig({
   test: {
     environment: "node",
     setupFiles: ["tests/setup.ts"],
-    include: ["tests/**/*.test.ts"],
+    include: ["tests/unit/**/*.test.ts", "tests/integration/**/*.test.ts"],
     exclude: ["tests/e2e/**"],
     testTimeout: 30_000,
     // Integration tests share one database; run files sequentially.
