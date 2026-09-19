@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { INTERESTS, INTEREST_LABELS, type InterestKey } from "@/lib/travel/interests";
 import { trackEvent } from "@/components/analytics/tracker";
+import { useAmountConverters } from "@/components/currency/currency-provider";
+import { parseCurrency } from "@/lib/currency";
 
 export type PlannerDefaults = {
   origin: string;
@@ -15,6 +17,8 @@ export type PlannerDefaults = {
   endDate: string;
   travellers: string;
   budget: string;
+  /** Currency the `budget` value is expressed in (from the URL). */
+  currency?: string;
   style: string;
   interests: InterestKey[];
 };
@@ -29,6 +33,8 @@ export function PlannerForm({
   defaults: PlannerDefaults;
 }) {
   const uid = useId();
+  const { currency, convert } = useAmountConverters();
+  const defaultBudget = defaults.budget ? String(Math.round(convert(Number(defaults.budget), parseCurrency(defaults.currency), currency))) : "";
   const id = (n: string) => `${uid}-${n}`;
   return (
     <form action="/trip-planner" method="get" onSubmit={() => trackEvent("trip_planner_started")} className="rounded-2xl border bg-card p-4 shadow-sm sm:p-6">
@@ -69,8 +75,8 @@ export function PlannerForm({
           <Input id={id("end")} name="endDate" type="date" defaultValue={defaults.endDate} required className="h-11 text-base md:text-sm" />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor={id("budget")}>Budget (USD, optional)</Label>
-          <Input id={id("budget")} name="budget" type="number" inputMode="numeric" min={0} step={50} defaultValue={defaults.budget} className="h-11 text-base md:text-sm" />
+          <Label htmlFor={id("budget")}>Budget ({currency}, optional)</Label>
+          <Input id={id("budget")} name="budget" type="number" inputMode="numeric" min={0} step={50} key={currency} defaultValue={defaultBudget} className="h-11 text-base md:text-sm" />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor={id("style")}>Travel style</Label>
@@ -81,6 +87,8 @@ export function PlannerForm({
           </NativeSelect>
         </div>
       </div>
+      <input type="hidden" name="currency" value={currency} />
+
       <fieldset className="mt-5">
         <legend className="mb-2 text-sm font-medium">Interests</legend>
         <div className="flex flex-wrap gap-2">

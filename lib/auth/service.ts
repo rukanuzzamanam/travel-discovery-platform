@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/lib/db/client";
 import { env } from "@/lib/env";
+import { DEFAULT_CURRENCY, type Currency } from "@/lib/currency";
 import { ApiError } from "@/lib/http/api";
 
 export const registerSchema = z.object({
@@ -19,7 +20,7 @@ export const loginSchema = z.object({
 // Always run a bcrypt compare, even for unknown emails, to avoid leaking which emails exist.
 const DUMMY_HASH = bcrypt.hashSync("tripora-dummy-password", 12);
 
-export async function registerUser(input: z.infer<typeof registerSchema>) {
+export async function registerUser(input: z.infer<typeof registerSchema>, opts: { currency?: Currency } = {}) {
   const existing = await db.user.findUnique({ where: { email: input.email } });
   if (existing) throw new ApiError("CONFLICT", "An account with this email already exists");
   const passwordHash = await bcrypt.hash(input.password, 12);
@@ -32,7 +33,7 @@ export async function registerUser(input: z.infer<typeof registerSchema>) {
       email: input.email,
       name: input.name,
       passwordHash,
-      preferences: { create: {} },
+      preferences: { create: { currency: opts.currency ?? DEFAULT_CURRENCY } },
       ...(bootstrap.includes(input.email) ? { adminUser: { create: { role: "ADMIN" } } } : {}),
     },
     select: { id: true, email: true, name: true },

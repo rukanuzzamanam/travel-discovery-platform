@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Compass, Heart, User } from "lucide-react";
 import { DesktopNav } from "./desktop-nav";
 import { MobileNav } from "./mobile-nav";
+import { CurrencySelector } from "@/components/currency/currency-selector";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,7 @@ export function SiteHeader() {
         </Link>
         <DesktopNav />
         <div className="flex items-center gap-1">
+          <CurrencySelector compact className="hidden sm:block" />
           <Link href="/account/trips" className={cn(buttonVariants({ variant: "ghost", size: "lg" }), "hidden sm:inline-flex")}>
             <Heart aria-hidden /> Saved Trips
           </Link>

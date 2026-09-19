@@ -1,10 +1,10 @@
 import Link from "next/link";
+import { Money } from "@/components/currency/currency-provider";
 import { CalendarCheck, Clock, Sparkles } from "lucide-react";
 import { DestImage } from "./dest-image";
 import { CostBreakdownList } from "./cost-breakdown";
 import { buttonVariants } from "@/components/ui/button";
 import type { DiscoverItem, ResolvedSearch } from "@/lib/travel/discover";
-import { formatUsd } from "@/lib/utils/format";
 import { cn } from "@/lib/utils";
 
 const SEASON_LABEL = { best: "Great time to go", shoulder: "Shoulder season", avoid: "Challenging weather" } as const;
@@ -17,6 +17,7 @@ export function plannerHref(slug: string, s: ResolvedSearch) {
     endDate: s.endDate,
     travellers: String(s.travellers),
     budget: String(s.budget),
+    currency: "USD", // s.budget is the stored USD amount
     style: s.style,
   });
   if (s.interests.length) q.set("interests", s.interests.join(","));
@@ -53,7 +54,7 @@ export function DiscoverResultCard({ item, search, rank }: { item: DiscoverItem;
         </ul>
         <CostBreakdownList cost={item.cost} compact />
         <p className={cn("text-sm", budgetLeft >= 0 ? "text-emerald-700" : "text-amber-700")}>
-          {budgetLeft >= 0 ? `${formatUsd(budgetLeft)} under your budget` : `${formatUsd(-budgetLeft)} over your budget`}
+          {budgetLeft >= 0 ? <><Money usd={budgetLeft} /> under your budget</> : <><Money usd={-budgetLeft} /> over your budget</>}
         </p>
         <div className="mt-auto flex flex-wrap gap-3">
           <Link href={`/destinations/${item.slug}`} className={cn(buttonVariants({ size: "xl" }))}>

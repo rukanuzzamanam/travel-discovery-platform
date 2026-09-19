@@ -4,7 +4,7 @@ import { z } from "zod";
 import { env } from "@/lib/env";
 import { logger, errorMeta } from "@/lib/logger";
 import { cleanText } from "@/lib/security/sanitize";
-import type { OperationCall } from "./operations";
+import type { OperationName } from "./operations";
 
 /**
  * Turns a free-text request ("make this trip $300 cheaper") into ONE of the fixed operations.
@@ -12,14 +12,16 @@ import type { OperationCall } from "./operations";
  * the operation then runs deterministically on structured trip data. Without AI_API_KEY a rule-based parser is used.
  */
 
-export type Interpretation = OperationCall | { operation: "unsupported" };
+/** `amount` is in the traveller's own currency. The service converts it to USD before running an operation. */
+export type RequestedOperation = { operation: OperationName; amount?: number; days?: number };
+export type Interpretation = RequestedOperation | { operation: "unsupported" };
 
 export function interpretWithRules(message: string): Interpretation {
   const m = message.toLowerCase();
-  const amount = Number(m.match(/\$\s?(\d[\d,]*)/)?.[1]?.replace(/,/g, "") ?? m.match(/(\d[\d,]{1,})\s*(?:usd|dollars?|bucks)/)?.[1]?.replace(/,/g, ""));
+  const amount = Number(m.match(/[$€£]\s?(\d[\d,]*)/)?.[1]?.replace(/,/g, "") ?? m.match(/(\d[\d,]{1,})\s*(?:usd|aud|eur|gbp|nzd|cad|sgd|dollars?|euros?|pounds?|bucks)/)?.[1]?.replace(/,/g, ""));
   const n = Number(m.match(/\b(\d)\s*(?:more\s+)?(?:day|night)/)?.[1]);
   if (/(cheaper|reduce|save|cut (?:the )?cost|lower (?:the )?cost|less expensive|under budget)/.test(m)) {
-    return { operation: "reduceTripCost", amountUsd: Number.isFinite(amount) ? amount : 200 };
+    return { operation: "reduceTripCost", amount: Number.isFinite(amount) ? amount : 200 };
   }
   if (/(too expensive|pricey|remove.*expensive|expensive activit)/.test(m)) return { operation: "removeExpensiveActivities" };
   if (/(upgrade|luxur|nicer|more comfortable|treat)/.test(m)) return { operation: "upgradeTrip" };
@@ -32,12 +34,12 @@ export function interpretWithRules(message: string): Interpretation {
 
 const llmSchema = z.object({
   operation: z.enum(["reduceTripCost", "upgradeTrip", "makeFamilyFriendly", "addBeachActivities", "removeExpensiveActivities", "shortenTrip", "extendTrip", "unsupported"]),
-  amountUsd: z.number().min(1).max(100000).nullable(),
+  amount: z.number().min(1).max(1_000_000).nullable(),
   days: z.number().int().min(1).max(5).nullable(),
 });
 
 const SYSTEM = `You route a traveller's request about their trip to exactly one edit operation.
-Operations: reduceTripCost (needs amountUsd, the total saving wanted; default 200 if unspecified), upgradeTrip, makeFamilyFriendly, addBeachActivities, removeExpensiveActivities, shortenTrip (days), extendTrip (days), unsupported.
+Operations: reduceTripCost (needs amount: the total saving wanted, as a number in the traveller's own currency; default 200 if unspecified), upgradeTrip, makeFamilyFriendly, addBeachActivities, removeExpensiveActivities, shortenTrip (days), extendTrip (days), unsupported.
 Choose "unsupported" if the request does not fit. Do not invent prices, places or activities. Output JSON only.`;
 
 export async function interpret(message: string): Promise<{ call: Interpretation; via: "ai" | "rules" }> {
@@ -60,7 +62,7 @@ export async function interpret(message: string): Promise<{ call: Interpretation
     const parsed = llmSchema.parse(JSON.parse(block && block.type === "text" ? block.text : "{}"));
     if (parsed.operation === "unsupported") return { call: { operation: "unsupported" }, via: "ai" };
     return {
-      call: { operation: parsed.operation as OperationCall["operation"], amountUsd: parsed.amountUsd ?? undefined, days: parsed.days ?? undefined },
+      call: { operation: parsed.operation as OperationName, amount: parsed.amount ?? undefined, days: parsed.days ?? undefined },
       via: "ai",
     };
   } catch (e) {

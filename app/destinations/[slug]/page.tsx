@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Money } from "@/components/currency/currency-provider";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Baby, CalendarDays, Clock, Sun, Wallet } from "lucide-react";
@@ -13,7 +14,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { destinationSchema } from "@/lib/seo/schema";
 import { getAirports, getDestinationBySlug, getDestinations, getPublishedItineraries } from "@/lib/travel/repository";
-import { formatMonthRange, formatUsd } from "@/lib/utils/format";
+import { formatMonthRange } from "@/lib/utils/format";
 import { INTEREST_LABELS } from "@/lib/travel/interests";
 import { cn } from "@/lib/utils";
 import { SaveDestinationButton } from "@/components/layout/account-panels";
@@ -91,7 +92,7 @@ export default async function DestinationPage({ params }: PageProps<"/destinatio
           <Fact icon={Sun} label="Best time to visit" value={formatMonthRange(d.bestMonths)} />
           <Fact icon={Clock} label="Recommended stay" value={`${d.recommendedDaysMin}–${d.recommendedDaysMax} nights`} />
           <Fact icon={Baby} label="Family suitability" value={`${d.familyScore} / 5`} />
-          <Fact icon={Wallet} label="Typical daily spend" value={`${formatUsd(d.dailyFood + d.dailyTransport + d.dailyActivities)} pp`} note="Excludes hotel and flights" />
+          <Fact icon={Wallet} label="Typical daily spend" value={<><Money usd={d.dailyFood + d.dailyTransport + d.dailyActivities} /> pp</>} note="Excludes hotel and flights" />
         </dl>
 
         <section aria-labelledby="overview">
@@ -125,20 +126,20 @@ export default async function DestinationPage({ params }: PageProps<"/destinatio
           </h2>
           <div className="mt-4 overflow-x-auto rounded-xl border bg-card">
             <table className="w-full text-left text-sm">
-              <caption className="sr-only">Estimated typical costs in {d.name}, in US dollars</caption>
+              <caption className="sr-only">Estimated typical costs in {d.name}</caption>
               <thead className="bg-muted/60 text-muted-foreground">
                 <tr>
                   <th scope="col" className="px-4 py-3 font-medium">Item</th>
-                  <th scope="col" className="px-4 py-3 font-medium">Estimated (USD)</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Estimated</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
-                <Row label="Hotel room, budget (per night)" value={formatUsd(d.hotelNightBudget)} />
-                <Row label="Hotel room, mid-range (per night)" value={formatUsd(d.hotelNightMid)} />
-                <Row label="Hotel room, luxury (per night)" value={formatUsd(d.hotelNightLuxury)} />
-                <Row label="Food (per person per day)" value={formatUsd(d.dailyFood)} />
-                <Row label="Local transport (per person per day)" value={formatUsd(d.dailyTransport)} />
-                <Row label="Activities (per person per day)" value={formatUsd(d.dailyActivities)} />
+                <Row label="Hotel room, budget (per night)" value={<Money usd={d.hotelNightBudget} />} />
+                <Row label="Hotel room, mid-range (per night)" value={<Money usd={d.hotelNightMid} />} />
+                <Row label="Hotel room, luxury (per night)" value={<Money usd={d.hotelNightLuxury} />} />
+                <Row label="Food (per person per day)" value={<Money usd={d.dailyFood} />} />
+                <Row label="Local transport (per person per day)" value={<Money usd={d.dailyTransport} />} />
+                <Row label="Activities (per person per day)" value={<Money usd={d.dailyActivities} />} />
               </tbody>
             </table>
           </div>
@@ -159,7 +160,7 @@ export default async function DestinationPage({ params }: PageProps<"/destinatio
                     ~{Math.round(a.durationMin / 60 * 10) / 10}h · {a.category}
                   </p>
                 </div>
-                <p className="shrink-0 text-sm font-semibold">{a.costUsd === 0 ? "Free" : `≈ ${formatUsd(a.costUsd)}`}</p>
+                <p className="shrink-0 text-sm font-semibold">{a.costUsd === 0 ? "Free" : <>≈ <Money usd={a.costUsd} /></>}</p>
               </li>
             ))}
           </ul>
@@ -226,7 +227,7 @@ export default async function DestinationPage({ params }: PageProps<"/destinatio
   );
 }
 
-function Fact({ icon: Icon, label, value, note }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string; note?: string }) {
+function Fact({ icon: Icon, label, value, note }: { icon: React.ComponentType<{ className?: string }>; label: string; value: React.ReactNode; note?: string }) {
   return (
     <div className="rounded-xl border bg-card p-4">
       <dt className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -238,7 +239,7 @@ function Fact({ icon: Icon, label, value, note }: { icon: React.ComponentType<{ 
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <tr>
       <th scope="row" className="px-4 py-3 font-normal">

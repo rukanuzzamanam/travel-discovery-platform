@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { INTERESTS, INTEREST_LABELS } from "@/lib/travel/interests";
+import { CURRENCY_INFO, SUPPORTED_CURRENCIES, parseCurrency } from "@/lib/currency";
+import { useAmountConverters, writeCurrencyCookie } from "@/components/currency/currency-provider";
 
 async function api(url: string, method: string, body?: unknown) {
   const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
@@ -34,7 +36,7 @@ export function PreferencesForm({
   initial,
 }: {
   airports: { iata: string; city: string }[];
-  initial: { homeAirport: string | null; travelStyle: string; interests: string[]; emailAlerts: boolean };
+  initial: { homeAirport: string | null; travelStyle: string; interests: string[]; emailAlerts: boolean; currency: string };
 }) {
   const [msg, setMsg] = useState<string | null>(null);
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -43,9 +45,11 @@ export function PreferencesForm({
     const json = await api("/api/v1/account/preferences", "PUT", {
       homeAirport: (f.get("homeAirport") as string) || null,
       travelStyle: f.get("travelStyle"),
+      currency: f.get("currency"),
       interests: f.getAll("interests"),
       emailAlerts: f.get("emailAlerts") === "on",
     });
+    if (json.success) writeCurrencyCookie(parseCurrency(f.get("currency")));
     setMsg(json.success ? "Preferences saved" : (json.error?.message ?? "Could not save"));
   }
   return (
@@ -68,6 +72,16 @@ export function PreferencesForm({
             <option value="BUDGET">Budget</option>
             <option value="MID_RANGE">Mid-range</option>
             <option value="LUXURY">Luxury</option>
+          </NativeSelect>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="pref-currency">Currency</Label>
+          <NativeSelect id="pref-currency" name="currency" defaultValue={parseCurrency(initial.currency)}>
+            {SUPPORTED_CURRENCIES.map((c) => (
+              <option key={c} value={c}>
+                {c} · {CURRENCY_INFO[c].name}
+              </option>
+            ))}
           </NativeSelect>
         </div>
       </div>
@@ -101,6 +115,7 @@ export function PreferencesForm({
 
 export function PriceAlertForm({ airports, destinations }: { airports: { iata: string; city: string }[]; destinations: { slug: string; name: string }[] }) {
   const router = useRouter();
+  const { currency, toStored, toDisplay } = useAmountConverters();
   const [msg, setMsg] = useState<string | null>(null);
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -108,7 +123,7 @@ export function PriceAlertForm({ airports, destinations }: { airports: { iata: s
     const json = await api("/api/v1/account/price-alerts", "POST", {
       destination: f.get("destination"),
       origin: f.get("origin"),
-      maxPriceUsd: Number(f.get("maxPriceUsd")),
+      maxPriceUsd: toStored(Number(f.get("maxPriceUsd"))), // typed in the visitor's currency, stored in USD
     });
     setMsg(json.success ? "Alert created" : (json.error?.message ?? "Could not create alert"));
     if (json.success) router.refresh();
@@ -132,7 +147,7 @@ export function PriceAlertForm({ airports, destinations }: { airports: { iata: s
           </option>
         ))}
       </NativeSelect>
-      <Input aria-label="Alert me under (USD)" name="maxPriceUsd" type="number" min={50} step={10} placeholder="Under $" required className="h-11" />
+      <Input aria-label={`Alert me under (${currency})`} name="maxPriceUsd" type="number" min={toDisplay(50)} step={10} placeholder={`Under ${CURRENCY_INFO[currency].symbol}`} required className="h-11" />
       <Button type="submit" className="h-11">
         Create alert
       </Button>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Compass } from "lucide-react";
 import { PRICE_DISCLAIMER } from "@/lib/travel/price-kind";
+import { CurrencyNote } from "@/components/currency/currency-provider";
 
 const COLUMNS = [
   {
@@ -63,7 +64,7 @@ export function SiteFooter() {
       <div className="border-t">
         <div className="mx-auto max-w-7xl space-y-2 px-4 py-6 text-xs text-muted-foreground sm:px-6 lg:px-8">
           <p>
-            <strong className="font-medium text-foreground">Estimated prices.</strong> {PRICE_DISCLAIMER}
+            <strong className="font-medium text-foreground">Estimated prices.</strong> {PRICE_DISCLAIMER} <CurrencyNote />
           </p>
           <p>
             Tripora earns a commission when you book through some links, at no extra cost to you. ©{" "}

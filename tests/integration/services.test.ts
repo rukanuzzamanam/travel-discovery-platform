@@ -95,6 +95,26 @@ describe("trips and itineraries", () => {
     expect(saved?.totalEstimateUsd).toBe(res.totals.total);
   });
 
+  it("interprets the request amount in the visitor's currency and replies in it", async () => {
+    const input = tripPlanSchema.parse({ origin: "SYD", destination: "tokyo", startDate: "2027-05-10", endDate: "2027-05-15", travellers: 2, style: "LUXURY" });
+    const trip = await createTrip(input);
+    await db.trip.update({ where: { shareToken: trip.token }, data: { title: `TESTRUN ${run} aud` } });
+    const res = await modifyItinerary(trip.token, { message: "Make this trip $300 cheaper", currency: "AUD" });
+    // A$300 is about US$200 at the static rate: the saving is in that range, not US$300.
+    expect(res.before - res.totals.total).toBeGreaterThanOrEqual(190);
+    expect(res.before - res.totals.total).toBeLessThan(400);
+    expect(res.reply).toMatch(/A\$\d/);
+    expect(res.reply).not.toMatch(/(^|[^A-Z])\$\d/); // never a bare $
+    expect(res.changes.join(" ")).toMatch(/A\$\d/);
+  });
+
+  it("converts a typed trip budget to stored USD", async () => {
+    const input = tripPlanSchema.parse({ origin: "SYD", destination: "bali", startDate: "2027-05-10", endDate: "2027-05-14", travellers: 1, budget: 3000, currency: "AUD" });
+    const trip = await createTrip(input);
+    await db.trip.update({ where: { shareToken: trip.token }, data: { title: `TESTRUN ${run} budget` } });
+    expect((await db.trip.findUnique({ where: { shareToken: trip.token } }))?.budgetUsd).toBe(2000);
+  });
+
   it("refuses to edit another user's trip", async () => {
     const email = `owner-${run}@example.test`;
     emails.push(email);
@@ -131,10 +151,18 @@ describe("authentication", () => {
     expect(row?.passwordHash).not.toContain("correct horse");
     expect(row?.passwordHash.startsWith("$2")).toBe(true);
     expect(row?.adminUser).toBeNull(); // regular users are never admins
+    expect((await db.userPreference.findUnique({ where: { userId: user.id } }))?.currency).toBe("AUD"); // default display currency
     await expect(registerUser({ email, password: "another password" })).rejects.toMatchObject({ code: "CONFLICT" });
     await expect(verifyCredentials({ email, password: "wrong password" })).rejects.toMatchObject({ code: "UNAUTHENTICATED" });
     await expect(verifyCredentials({ email: "nobody@example.test", password: "x" })).rejects.toMatchObject({ code: "UNAUTHENTICATED" });
     await expect(verifyCredentials({ email, password: "correct horse battery" })).resolves.toMatchObject({ email });
+  });
+
+  it("stores the visitor's chosen currency on the existing preference field", async () => {
+    const email = `cur-${run}@example.test`;
+    emails.push(email);
+    const user = await registerUser({ email, password: "correct horse battery" }, { currency: "EUR" });
+    expect((await db.userPreference.findUnique({ where: { userId: user.id } }))?.currency).toBe("EUR");
   });
 
   it("only grants ADMIN to bootstrap emails", async () => {

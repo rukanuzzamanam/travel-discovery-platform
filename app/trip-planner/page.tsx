@@ -1,17 +1,20 @@
 import type { Metadata } from "next";
+import { Money } from "@/components/currency/currency-provider";
 import { PlannerForm } from "@/components/planner/planner-form";
 import { BuildItineraryButton } from "@/components/planner/build-itinerary-button";
 import { CostBreakdownList } from "@/components/travel/cost-breakdown";
 import { TrackOnMount } from "@/components/analytics/tracker";
 import { AffiliateLink } from "@/components/affiliate/affiliate-link";
 import { getAirport, getAirports, getDestinationBySlug, getDestinations } from "@/lib/travel/repository";
-import { tripPlanSchema, addDays, nightsBetween, paramsToObject } from "@/lib/travel/schemas";
+import { tripPlanRequestSchema, addDays, nightsBetween, paramsToObject } from "@/lib/travel/schemas";
+import { DEFAULT_CURRENCY, toBase } from "@/lib/currency";
+import { getRateTable } from "@/lib/currency/fx-provider";
 import { generateItinerary } from "@/lib/travel/itinerary";
 import { computeTotals } from "@/lib/travel/trip";
 import { createLink, withSource } from "@/lib/affiliate/links";
 import { DEFAULT_ORIGIN } from "@/lib/site";
 import { PRICE_DISCLAIMER } from "@/lib/travel/price-kind";
-import { formatUsd, plural } from "@/lib/utils/format";
+import { plural } from "@/lib/utils/format";
 import { Plane, Hotel } from "lucide-react";
 import type { InterestKey } from "@/lib/travel/interests";
 
@@ -33,13 +36,14 @@ export default async function TripPlannerPage({ searchParams }: PageProps<"/trip
   const end = raw.endDate ?? addDays(start, 7);
 
   const parsed = rawDest
-    ? tripPlanSchema.safeParse({
+    ? tripPlanRequestSchema.safeParse({
         origin: raw.origin ?? DEFAULT_ORIGIN,
         destination: rawDest,
         startDate: start,
         endDate: end,
         travellers: raw.travellers ?? 2,
         budget: raw.budget || undefined,
+        currency: raw.currency,
         style: raw.style ?? "MID_RANGE",
         interests: raw.interests,
       })
@@ -65,6 +69,7 @@ export default async function TripPlannerPage({ searchParams }: PageProps<"/trip
             endDate: end,
             travellers: raw.travellers ?? "2",
             budget: raw.budget ?? "",
+            currency: raw.currency,
             style: raw.style ?? "MID_RANGE",
             interests: (parsed?.success ? parsed.data.interests : []) as InterestKey[],
           }}
@@ -92,11 +97,17 @@ export default async function TripPlannerPage({ searchParams }: PageProps<"/trip
               {plural(estimate.nights, "night")} · {plural(estimate.input.travellers, "traveller")} · from {estimate.originLabel}
             </p>
             <CostBreakdownList cost={estimate.totals} />
-            {estimate.input.budget !== undefined && (
-              <p className={estimate.totals.total <= estimate.input.budget ? "mt-4 text-emerald-700" : "mt-4 text-amber-700"}>
-                {estimate.totals.total <= estimate.input.budget
-                  ? `${formatUsd(estimate.input.budget - estimate.totals.total)} under your ${formatUsd(estimate.input.budget)} budget`
-                  : `${formatUsd(estimate.totals.total - estimate.input.budget)} over your ${formatUsd(estimate.input.budget)} budget. Try Budget style or fewer nights.`}
+            {estimate.budgetUsd !== undefined && (
+              <p className={estimate.totals.total <= estimate.budgetUsd ? "mt-4 text-emerald-700" : "mt-4 text-amber-700"}>
+                {estimate.totals.total <= estimate.budgetUsd ? (
+                  <>
+                    <Money usd={estimate.budgetUsd - estimate.totals.total} /> under your <Money usd={estimate.budgetUsd} /> budget
+                  </>
+                ) : (
+                  <>
+                    <Money usd={estimate.totals.total - estimate.budgetUsd} /> over your <Money usd={estimate.budgetUsd} /> budget. Try Budget style or fewer nights.
+                  </>
+                )}
               </p>
             )}
             <div className="mt-6">
@@ -108,6 +119,7 @@ export default async function TripPlannerPage({ searchParams }: PageProps<"/trip
                   endDate: estimate.input.endDate,
                   travellers: estimate.input.travellers,
                   budget: estimate.input.budget,
+                  currency: estimate.input.currency,
                   style: estimate.input.style,
                   interests: estimate.input.interests,
                 }}
@@ -138,6 +150,8 @@ async function buildEstimate(input: import("@/lib/travel/schemas").TripPlanInput
   const [dest, origin] = await Promise.all([getDestinationBySlug(input.destination), getAirport(input.origin)]);
   if (!dest || !origin) return null;
   const nights = nightsBetween(input.startDate, input.endDate);
+  // The typed budget is in `input.currency`; compare it with the (USD) estimate.
+  const budgetUsd = input.budget === undefined ? undefined : toBase(input.budget, input.currency ?? DEFAULT_CURRENCY, await getRateTable());
   const days = generateItinerary(dest, { days: nights, style: input.style, interests: input.interests, travellers: input.travellers });
   const totals = computeTotals(dest, origin, {
     origin: origin.iata,
@@ -158,6 +172,7 @@ async function buildEstimate(input: import("@/lib/travel/schemas").TripPlanInput
     input,
     nights,
     totals,
+    budgetUsd,
     destinationName: dest.name,
     originLabel: `${origin.city} (${origin.iata})`,
     flightPath: withSource(flight, { page, component: "planner-estimate-flight" }),

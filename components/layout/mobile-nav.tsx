@@ -6,6 +6,7 @@ import { Compass, Heart, Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { NAV } from "@/lib/site";
+import { CurrencySelector } from "@/components/currency/currency-selector";
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
@@ -33,6 +34,7 @@ export function MobileNav() {
           ))}
         </nav>
         <div className="grid gap-2 border-t p-3">
+          <CurrencySelector className="px-3 pb-1" />
           <Link href="/account/trips" onClick={close} className="flex items-center gap-2 rounded-lg px-3 py-3 font-medium hover:bg-muted">
             <Heart className="size-4" aria-hidden /> Saved Trips
           </Link>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Money } from "@/components/currency/currency-provider";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Hotel } from "lucide-react";
@@ -9,7 +10,7 @@ import { TrackOnMount } from "@/components/analytics/tracker";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getDestinationBySlug, getDestinations } from "@/lib/travel/repository";
 import { getHotelOptions } from "@/lib/travel/products";
-import { formatMonthRange, formatUsd } from "@/lib/utils/format";
+import { formatMonthRange } from "@/lib/utils/format";
 
 export const revalidate = 3600;
 
@@ -56,7 +57,7 @@ export default async function HotelsInPage({ params }: PageProps<"/hotels/[slug]
           {rows.map(([label, v]) => (
             <li key={label} className="rounded-xl border bg-card p-4">
               <p className="text-sm text-muted-foreground">{label}</p>
-              <p className="text-2xl font-bold">{formatUsd(v)}</p>
+              <p className="text-2xl font-bold"><Money usd={v} /></p>
             </li>
           ))}
         </ul>

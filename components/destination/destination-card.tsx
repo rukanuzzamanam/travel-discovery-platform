@@ -1,9 +1,9 @@
 import Link from "next/link";
+import { Money } from "@/components/currency/currency-provider";
 import { MapPin } from "lucide-react";
 import { DestImage } from "@/components/travel/dest-image";
 import { PriceKindBadge } from "@/components/travel/price-kind-badge";
 import type { PriceKindKey } from "@/lib/travel/types";
-import { formatUsd } from "@/lib/utils/format";
 
 export type DestinationCardData = {
   slug: string;
@@ -53,7 +53,7 @@ export function DestinationCard({
         {fromUsd !== undefined && (
           <p className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">{fromLabel}</span>
-            <span className="font-semibold">{formatUsd(fromUsd)}</span>
+            <span className="font-semibold"><Money usd={fromUsd} /></span>
             <PriceKindBadge kind={priceKind} variant="card" />
           </p>
         )}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Money } from "@/components/currency/currency-provider";
 import { Compass, Sparkles, Wallet, Map } from "lucide-react";
 import { DiscoveryForm } from "@/components/travel/discovery-form";
 import { DestinationRail, type RailItem } from "@/components/destination/destination-rail";
@@ -9,8 +10,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { discover } from "@/lib/travel/discover";
 import { getActiveDeals, getAirports, getDestinations, getPublishedGuides } from "@/lib/travel/repository";
 import { DEFAULT_ORIGIN, SITE } from "@/lib/site";
+import { formatCurrency } from "@/lib/currency";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { formatUsd } from "@/lib/utils/format";
 import { cn } from "@/lib/utils";
 
 export const revalidate = 3600;
@@ -30,8 +31,8 @@ export default async function HomePage() {
     getDestinations(),
     getActiveDeals(),
     getPublishedGuides(),
-    discover({ origin: DEFAULT_ORIGIN, budget: 1000, nights: 5, travellers: 1, interests: [], style: "BUDGET" }, 8),
-    discover({ origin: DEFAULT_ORIGIN, budget: 1500, nights: 5, travellers: 1, interests: [], style: "BUDGET" }, 8),
+    discover({ origin: DEFAULT_ORIGIN, budget: 1500, currency: "AUD", nights: 5, travellers: 1, interests: [], style: "BUDGET" }, 8),
+    discover({ origin: DEFAULT_ORIGIN, budget: 2000, currency: "AUD", nights: 5, travellers: 1, interests: [], style: "BUDGET" }, 8),
     discover({ origin: DEFAULT_ORIGIN, budget: 900, nights: 3, travellers: 2, interests: [], style: "MID_RANGE" }, 20),
   ]);
 
@@ -69,19 +70,19 @@ export default async function HomePage() {
 
       <div className="mx-auto max-w-7xl space-y-20 px-4 py-16 sm:px-6 lg:px-8">
         <DestinationRail
-          id="for-1000"
-          title="Where can I go for $1,000?"
+          id="for-1500"
+          title={`Where can I go for ${formatCurrency(1500, "AUD")}?`}
           subtitle={`One traveller, 5 nights, budget style, flying from Sydney. Estimated total trip cost.`}
           items={tripRail(b1000.items)}
-          href={`/discover?origin=${DEFAULT_ORIGIN}&budget=1000&nights=5&travellers=1&style=BUDGET`}
+          href={`/discover?origin=${DEFAULT_ORIGIN}&budget=1500&nights=5&travellers=1&style=BUDGET`}
           hrefLabel="More ideas"
         />
         <DestinationRail
-          id="for-1500"
-          title="Where can I go for $1,500?"
+          id="for-2000"
+          title={`Where can I go for ${formatCurrency(2000, "AUD")}?`}
           subtitle="Room for a little more comfort — or a longer flight."
           items={tripRail(b1500.items)}
-          href={`/discover?origin=${DEFAULT_ORIGIN}&budget=1500&nights=5&travellers=1&style=BUDGET`}
+          href={`/discover?origin=${DEFAULT_ORIGIN}&budget=2000&nights=5&travellers=1&style=BUDGET`}
           hrefLabel="More ideas"
         />
         <DestinationRail id="weekend" title="Weekend escapes" subtitle="Short flights, three nights." items={weekendItems} href="/weekend-getaways/sydney" />
@@ -138,7 +139,7 @@ export default async function HomePage() {
                     <h3 className="font-semibold">{d.title}</h3>
                     {d.fromPriceUsd && (
                       <p className="mt-2 flex items-center gap-2">
-                        <span className="text-2xl font-bold">{formatUsd(d.fromPriceUsd)}</span>
+                        <span className="text-2xl font-bold"><Money usd={d.fromPriceUsd} /></span>
                         <PriceKindBadge kind={d.priceKind} variant="card" />
                       </p>
                     )}

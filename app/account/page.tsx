@@ -1,8 +1,9 @@
 import { db } from "@/lib/db/client";
+import { Money } from "@/components/currency/currency-provider";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getAirports, getDestinations } from "@/lib/travel/repository";
 import { LogoutButton, PreferencesForm, PriceAlertForm, RemoveButton } from "@/components/layout/account-panels";
-import { formatUsd } from "@/lib/utils/format";
+import { parseCurrency } from "@/lib/currency";
 import Link from "next/link";
 
 export default async function AccountPage() {
@@ -27,7 +28,7 @@ export default async function AccountPage() {
 
       <section aria-labelledby="prefs">
         <h2 id="prefs" className="mb-4 text-xl font-bold">Preferences</h2>
-        <PreferencesForm airports={ap} initial={{ homeAirport: prefs?.homeAirport ?? null, travelStyle: prefs?.travelStyle ?? "MID_RANGE", interests: prefs?.interests ?? [], emailAlerts: prefs?.emailAlerts ?? false }} />
+        <PreferencesForm airports={ap} initial={{ homeAirport: prefs?.homeAirport ?? null, travelStyle: prefs?.travelStyle ?? "MID_RANGE", interests: prefs?.interests ?? [], emailAlerts: prefs?.emailAlerts ?? false, currency: parseCurrency(prefs?.currency) }} />
       </section>
 
       <section aria-labelledby="saved">
@@ -52,7 +53,7 @@ export default async function AccountPage() {
         <ul className="mt-4 divide-y rounded-xl border">
           {alerts.map((a) => (
             <li key={a.id} className="flex items-center justify-between p-3 text-sm">
-              <span>{a.origin} → {a.destination.name} under {formatUsd(a.maxPriceUsd)}</span>
+              <span>{a.origin} → {a.destination.name} under <Money usd={a.maxPriceUsd} /></span>
               <RemoveButton url="/api/v1/account/price-alerts" body={{ id: a.id }} label="Remove alert" />
             </li>
           ))}

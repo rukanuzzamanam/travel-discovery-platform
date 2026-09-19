@@ -8,11 +8,15 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { INTERESTS, INTEREST_LABELS, type InterestKey } from "@/lib/travel/interests";
 import { trackEvent } from "@/components/analytics/tracker";
+import { useAmountConverters } from "@/components/currency/currency-provider";
+import { CURRENCY_INFO, parseCurrency } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 
 export type FormDefaults = {
   origin?: string;
   budget?: string | number;
+  /** Currency the `budget` value is expressed in (from the URL). */
+  currency?: string;
   startDate?: string;
   nights?: string | number;
   travellers?: string | number;
@@ -35,6 +39,9 @@ export function DiscoveryForm({
   const uid = useId();
   const id = (n: string) => `${uid}-${n}`;
   const selected = new Set(defaults.interests ?? []);
+  const { currency, convert } = useAmountConverters();
+  // A shared link may carry a budget in another currency: show it in the visitor's own currency.
+  const defaultBudget = defaults.budget ? Math.round(convert(Number(defaults.budget), parseCurrency(defaults.currency), currency)) : 1500;
 
   return (
     <form
@@ -56,10 +63,10 @@ export function DiscoveryForm({
           </NativeSelect>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor={id("budget")}>Total budget (USD)</Label>
+          <Label htmlFor={id("budget")}>Total budget ({currency})</Label>
           <div className="relative">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden>
-              $
+              {CURRENCY_INFO[currency].symbol}
             </span>
             <Input
               id={id("budget")}
@@ -70,8 +77,9 @@ export function DiscoveryForm({
               max={100000}
               step={50}
               required
-              defaultValue={defaults.budget ?? 1500}
-              className="h-11 pl-7 text-base md:text-sm"
+              key={currency}
+              defaultValue={defaultBudget}
+              className="h-11 pl-11 text-base md:text-sm"
             />
           </div>
         </div>
@@ -100,6 +108,8 @@ export function DiscoveryForm({
           </NativeSelect>
         </div>
       </div>
+
+      <input type="hidden" name="currency" value={currency} />
 
       <fieldset className="mt-5">
         <legend className="mb-2 text-sm font-medium">What are you into?</legend>

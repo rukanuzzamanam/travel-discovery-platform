@@ -3,7 +3,7 @@ import { Bars } from "@/components/admin/charts";
 import { ConversionForm } from "@/components/admin/conversion-form";
 import { db } from "@/lib/db/client";
 import { rangeFromDays, revenueBy } from "@/lib/admin/stats";
-import { formatUsd } from "@/lib/utils/format";
+import { formatCurrency } from "@/lib/currency";
 
 export default async function AdminRevenue({ searchParams }: PageProps<"/admin/revenue">) {
   const days = parseDays((await searchParams).days);
@@ -14,7 +14,7 @@ export default async function AdminRevenue({ searchParams }: PageProps<"/admin/r
     revenueBy("provider", r),
     db.conversion.findMany({ orderBy: { createdAt: "desc" }, take: 25, include: { click: { select: { sourcePage: true, subId: true } } } }),
   ]);
-  const rows = (x: { key: string; clicks: number; revenue: number }[]) => x.map((i) => [i.key, i.clicks, formatUsd(i.revenue), i.clicks ? formatUsd(i.revenue / i.clicks) : "–"]);
+  const rows = (x: { key: string; clicks: number; revenue: number }[]) => x.map((i) => [i.key, i.clicks, formatCurrency(i.revenue, "USD"), i.clicks ? formatCurrency(i.revenue / i.clicks, "USD") : "–"]);
   const head = ["Key", "Clicks", "Revenue", "Per click"];
   return (
     <>

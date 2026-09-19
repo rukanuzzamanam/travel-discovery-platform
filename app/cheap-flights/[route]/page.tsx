@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Money } from "@/components/currency/currency-provider";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Plane } from "lucide-react";
@@ -11,7 +12,7 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import { getActiveDeals, getAirport, getDestinationBySlug } from "@/lib/travel/repository";
 import { getFlightOptions } from "@/lib/travel/products";
 import { flightHours, haversineKm } from "@/lib/travel/estimator";
-import { formatMonthRange, formatUsd } from "@/lib/utils/format";
+import { formatMonthRange } from "@/lib/utils/format";
 
 export const revalidate = 1800;
 
@@ -60,7 +61,7 @@ export default async function CheapFlightsPage({ params }: PageProps<"/cheap-fli
           Cheap flights from {r.origin.city} to {r.dest.name}
         </h1>
         <p className="mt-3 flex flex-wrap items-center gap-2 text-lg">
-          Typical return fare: <strong>{formatUsd(opts.estimate.priceUsd)}</strong> <EstimateBadge />
+          Typical return fare: <strong><Money usd={opts.estimate.priceUsd} /></strong> <EstimateBadge />
         </p>
         <p className="mt-1 text-sm text-muted-foreground">{opts.estimate.note}</p>
       </header>
@@ -75,7 +76,7 @@ export default async function CheapFlightsPage({ params }: PageProps<"/cheap-fli
             {opts.providerPrices.map((p) => (
               <li key={`${p.priceUsd}-${p.departAt}`} className="flex justify-between p-3">
                 <span>{p.departAt ? p.departAt.slice(0, 10) : "Flexible dates"}</span>
-                <span className="flex items-center gap-2 font-semibold">{formatUsd(p.priceUsd)} <PriceKindBadge kind="PROVIDER" /></span>
+                <span className="flex items-center gap-2 font-semibold"><Money usd={p.priceUsd} /> <PriceKindBadge kind="PROVIDER" /></span>
               </li>
             ))}
           </ul>

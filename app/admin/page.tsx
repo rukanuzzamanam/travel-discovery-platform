@@ -1,7 +1,7 @@
 import { Card, RangeTabs, Stat, parseDays } from "@/components/admin/admin-ui";
 import { Bars, TimeSeries } from "@/components/admin/charts";
 import { clicksOverTime, overview, rangeFromDays, revenueBy, topDestinations, trafficOverTime } from "@/lib/admin/stats";
-import { formatUsd } from "@/lib/utils/format";
+import { formatCurrency } from "@/lib/currency";
 
 export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
   const days = parseDays((await searchParams).days);
@@ -27,7 +27,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
         <Stat label="Trips created" value={o.trips} />
         <Stat label="Affiliate clicks" value={o.clicks} />
         <Stat label="Conversion rate" value={`${o.conversionRate}%`} note="conversions / clicks" />
-        <Stat label="Estimated revenue" value={formatUsd(o.revenue)} note="USD, excl. rejected" />
+        <Stat label="Estimated revenue" value={formatCurrency(o.revenue, "USD")} note="USD, excl. rejected" />
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title="Traffic over time (page views)"><TimeSeries data={traffic} label="Page views" /></Card>

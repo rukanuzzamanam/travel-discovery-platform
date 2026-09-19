@@ -1,6 +1,3 @@
-export const formatUsd = (n: number) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
-
 export const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 export const monthShort = (m: number) => MONTH_NAMES[m - 1]?.slice(0, 3) ?? "";

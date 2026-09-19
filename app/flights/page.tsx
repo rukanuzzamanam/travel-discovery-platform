@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Money } from "@/components/currency/currency-provider";
 import { Plane } from "lucide-react";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { AffiliateLink } from "@/components/affiliate/affiliate-link";
@@ -13,7 +14,6 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import { getActiveDeals, getAirports, getDestinations } from "@/lib/travel/repository";
 import { getFlightOptions } from "@/lib/travel/products";
 import { DEFAULT_ORIGIN } from "@/lib/site";
-import { formatUsd } from "@/lib/utils/format";
 import type { Metadata } from "next";
 
 // The index is indexable; result variants (with query params) are canonicalised to /flights and noindexed.
@@ -76,7 +76,7 @@ export default async function FlightsPage({ searchParams }: PageProps<"/flights"
         <section className="mt-8 rounded-2xl border bg-card p-6" aria-labelledby="res">
           <h2 id="res" className="text-xl font-bold">{result.origin} → {result.destination}</h2>
           <p className="mt-2 flex flex-wrap items-center gap-2">
-            Typical return fare: <strong className="text-2xl">{formatUsd(result.estimate.priceUsd)}</strong> <EstimateBadge />
+            Typical return fare: <strong className="text-2xl"><Money usd={result.estimate.priceUsd} /></strong> <EstimateBadge />
           </p>
           <p className="text-sm text-muted-foreground">{result.estimate.note}</p>
           {result.providerPrices.length > 0 && (
@@ -87,7 +87,7 @@ export default async function FlightsPage({ searchParams }: PageProps<"/flights"
                 {result.providerPrices.map((p) => (
                   <li key={`${p.priceUsd}-${p.departAt}`} className="flex justify-between p-3 text-sm">
                     <span>{p.departAt?.slice(0, 10) ?? "Flexible"}{p.airline ? ` · ${p.airline}` : ""}</span>
-                    <span className="flex items-center gap-2 font-semibold">{formatUsd(p.priceUsd)} <PriceKindBadge kind="PROVIDER" /></span>
+                    <span className="flex items-center gap-2 font-semibold"><Money usd={p.priceUsd} /> <PriceKindBadge kind="PROVIDER" /></span>
                   </li>
                 ))}
               </ul>
@@ -106,7 +106,7 @@ export default async function FlightsPage({ searchParams }: PageProps<"/flights"
             <li key={d.slug}>
               <Link href={`/cheap-flights/${d.slug}`} className="flex items-center justify-between rounded-xl border bg-card p-4 hover:shadow-md">
                 <span className="font-medium">{d.title}</span>
-                {d.fromPriceUsd && <span className="text-sm">~{formatUsd(d.fromPriceUsd)}</span>}
+                {d.fromPriceUsd && <span className="text-sm">~<Money usd={d.fromPriceUsd} /></span>}
               </Link>
             </li>
           ))}

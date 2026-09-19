@@ -334,3 +334,56 @@ d("trip planner flow", () => {
     expect((await owner.fetch(`/api/v1/trips/${token}`, { method: "PUT", json: { days: got.data.state.days } })).status).toBe(200);
   });
 });
+
+d("currency", () => {
+  it("renders the default currency (AUD) with an unambiguous symbol and a currency selector", async () => {
+    const html = await (await fetch(`${BASE}/`)).text();
+    expect(html).toMatch(/Where can I go for A\$1,500\?/);
+    expect(html).toMatch(/Where can I go for A\$2,000\?/);
+    // React SSR separates adjacent text nodes with <!-- --> markers; ignore them when matching visible text.
+    expect(html.replace(/<!-- -->/g, "")).toMatch(/Total budget \(AUD\)/);
+    for (const code of ["AUD", "USD", "EUR", "GBP", "NZD", "CAD", "SGD"]) expect(html).toContain(`>${code}<`);
+    expect(html).toContain("fixed, approximate exchange rates");
+    expect(html).toContain("not live rates");
+    expect(html).not.toMatch(/>\$[0-9]/); // no bare-$ prices in the markup
+    const dest = await (await fetch(`${BASE}/destinations/bali`)).text();
+    expect(dest).toMatch(/A\$[0-9]/);
+    expect(dest).not.toMatch(/>\$[0-9]/);
+  });
+
+  it("interprets API budgets in the requested currency (default AUD) and converts to stored USD", async () => {
+    const c = new Client();
+    const post = async (extra: Record<string, unknown>) =>
+      (await c.fetch("/api/v1/discover", { method: "POST", json: { origin: "SYD", budget: 1500, nights: 5, travellers: 1, style: "BUDGET", ...extra } })).json();
+    expect((await post({})).data.search.budget).toBe(1000); // default AUD: 1500 AUD = 1000 USD
+    expect((await post({ currency: "USD" })).data.search.budget).toBe(1500);
+    expect((await post({ currency: "aud" })).data.search.budget).toBe(1000); // case-insensitive
+    const bad = await c.fetch("/api/v1/discover", { method: "POST", json: { origin: "SYD", budget: 1500, currency: "XYZ" } });
+    expect(bad.status).toBe(400);
+    expect((await bad.json()).error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("persists the chosen currency on the account (existing preference field)", async () => {
+    const c = new Client();
+    c.cookies.set("tripora_currency", "GBP");
+    await c.register("curpref");
+    expect((await (await c.fetch("/api/v1/account/preferences")).json()).data.currency).toBe("GBP"); // taken from the cookie at sign-up
+    const put = await (await c.fetch("/api/v1/account/preferences", { method: "PUT", json: { currency: "nzd" } })).json();
+    expect(put.data.currency).toBe("NZD");
+    expect((await c.fetch("/api/v1/account/preferences", { method: "PUT", json: { currency: "XYZ" } })).status).toBe(400);
+    const anon = new Client();
+    expect((await anon.fetch("/api/v1/account/preferences", { method: "PUT", json: { currency: "EUR" } })).status).toBe(401);
+  });
+
+  it("assistant replies use the requested currency and treat the typed amount as that currency", async () => {
+    const c = new Client();
+    const created = await (await c.fetch("/api/v1/trips", { method: "POST", json: { origin: "SYD", destination: "tokyo", startDate: "2027-05-10", endDate: "2027-05-15", style: "LUXURY" } })).json();
+    const token = created.data.token as string;
+    await db.trip.update({ where: { shareToken: token }, data: { title: `E2E cur ${run}` } });
+    const aud = await (await c.fetch("/api/v1/itinerary", { method: "POST", json: { token, message: "Make this trip $300 cheaper" } })).json();
+    expect(aud.data.reply).toMatch(/A\$\d/);
+    const eur = await (await c.fetch("/api/v1/itinerary", { method: "POST", json: { token, operation: "reduceTripCost", amount: 500, currency: "EUR" } })).json(); // 500 EUR, not 500 USD
+    expect(eur.data.reply).toMatch(/€\d/);
+    expect((await c.fetch("/api/v1/itinerary", { method: "POST", json: { token, operation: "upgradeTrip", currency: "XYZ" } })).status).toBe(400);
+  });
+});

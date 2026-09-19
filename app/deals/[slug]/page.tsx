@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Money } from "@/components/currency/currency-provider";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Plane } from "lucide-react";
@@ -9,7 +10,6 @@ import { PriceDisclaimer } from "@/components/travel/price-disclaimer";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getActiveDeals } from "@/lib/travel/repository";
 import { createLink, withSource } from "@/lib/affiliate/links";
-import { formatUsd } from "@/lib/utils/format";
 
 export const revalidate = 1800;
 
@@ -36,7 +36,7 @@ export default async function DealPage({ params }: PageProps<"/deals/[slug]">) {
       <h1 className="mt-4 text-3xl font-bold sm:text-4xl">{d.title}</h1>
       {d.fromPriceUsd && (
         <p className="mt-4 flex items-center gap-3">
-          <span className="text-4xl font-bold">{formatUsd(d.fromPriceUsd)}</span>
+          <span className="text-4xl font-bold"><Money usd={d.fromPriceUsd} /></span>
           <PriceKindBadge kind={d.priceKind} variant="card" />
         </p>
       )}

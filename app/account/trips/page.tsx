@@ -1,7 +1,7 @@
 import Link from "next/link";
+import { Money } from "@/components/currency/currency-provider";
 import { db } from "@/lib/db/client";
 import { getCurrentUser } from "@/lib/auth/session";
-import { formatUsd } from "@/lib/utils/format";
 
 export default async function SavedTripsPage() {
   const user = (await getCurrentUser())!;
@@ -20,7 +20,7 @@ export default async function SavedTripsPage() {
               <Link href={`/trips/${t.shareToken}`} className="block rounded-2xl border bg-card p-5 hover:shadow-md">
                 <p className="font-semibold">{t.title}</p>
                 <p className="text-sm text-muted-foreground">{t.startDate.toISOString().slice(0, 10)} · {t.travellers} travellers</p>
-                <p className="mt-2 text-lg font-bold">{formatUsd(t.totalEstimateUsd)} <span className="text-xs font-normal text-muted-foreground">estimated</span></p>
+                <p className="mt-2 text-lg font-bold"><Money usd={t.totalEstimateUsd} /> <span className="text-xs font-normal text-muted-foreground">estimated</span></p>
               </Link>
             </li>
           ))}

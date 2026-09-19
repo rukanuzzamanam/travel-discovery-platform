@@ -1,5 +1,6 @@
 "use client";
 
+import { formatCurrency } from "@/lib/currency";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const PRIMARY = "#1d5f8a";
@@ -33,9 +34,9 @@ export function Bars({ data, label, valueLabel, money = false }: { data: { key: 
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ left: 24, right: 16 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
-            <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v: number) => (money ? `$${v}` : String(v))} />
+            <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v: number) => (money ? formatCurrency(v, "USD") : String(v))} />
             <YAxis type="category" dataKey="key" width={130} tick={{ fontSize: 11 }} />
-            <Tooltip formatter={(v) => (money ? `$${Number(v).toFixed(2)}` : String(v))} />
+            <Tooltip formatter={(v) => (money ? formatCurrency(Number(v), "USD", { fractionDigits: 2 }) : String(v))} />
             <Bar dataKey="value" name={valueLabel} fill={PRIMARY} radius={[0, 4, 4, 0]} />
           </BarChart>
         </ResponsiveContainer>

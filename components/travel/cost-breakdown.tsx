@@ -1,7 +1,7 @@
 import { Bus, Hotel, Plane, Ticket, Utensils } from "lucide-react";
+import { Money } from "@/components/currency/currency-provider";
 import type { CostBreakdown } from "@/lib/travel/types";
 import { COMPONENT_LABEL, COST_COMPONENTS, type CostComponent } from "@/lib/travel/price-kind";
-import { formatUsd } from "@/lib/utils/format";
 import { PriceKindBadge } from "./price-kind-badge";
 
 const ICONS: Record<CostComponent, typeof Plane> = { flight: Plane, hotel: Hotel, food: Utensils, activities: Ticket, transport: Bus };
@@ -19,7 +19,7 @@ export function CostBreakdownList({ cost, compact = false }: { cost: CostBreakdo
       <div className="flex items-baseline justify-between gap-2">
         <div>
           <p className="text-xs text-muted-foreground">Estimated trip cost</p>
-          <p className={compact ? "text-2xl font-bold" : "text-3xl font-bold"}>{formatUsd(cost.total)}</p>
+          <p className={compact ? "text-2xl font-bold" : "text-3xl font-bold"}><Money usd={cost.total} /></p>
         </div>
         <PriceKindBadge kind="ESTIMATE" />
       </div>
@@ -32,7 +32,7 @@ export function CostBreakdownList({ cost, compact = false }: { cost: CostBreakdo
                 <Icon className="size-3.5" aria-hidden /> {COMPONENT_LABEL[key]}
               </dt>
               <dd className="flex items-center gap-2 font-medium tabular-nums">
-                {formatUsd(cost[key])}
+                <Money usd={cost[key]} />
                 {perRow && <PriceKindBadge kind={cost.kinds[key]} includesUser={key === "activities" && !!cost.includesUserPrices} />}
               </dd>
             </div>

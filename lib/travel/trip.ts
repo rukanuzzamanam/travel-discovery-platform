@@ -8,6 +8,8 @@ import { itineraryDaysSchema } from "./itinerary-schema";
 import { getAirport, getDestinationBySlug, getPublishedItineraries } from "./repository";
 import { addDays, nightsBetween, type TripPlanInput } from "./schemas";
 import { toEnum, fromEnum, type InterestKey } from "./interests";
+import { toBase } from "@/lib/currency";
+import { getRateTable } from "@/lib/currency/fx-provider";
 import type { CostBreakdown, DestinationModel, ItineraryDay, TravelStyleKey } from "./types";
 
 /** Everything needed to (re)compute a trip. The single source of truth the AI operations edit. */
@@ -69,7 +71,7 @@ export async function createTrip(input: TripPlanInput & { itinerarySlug?: string
     travellers: input.travellers,
     style: input.style,
     interests: input.interests,
-    budgetUsd: input.budget,
+    budgetUsd: input.budget === undefined ? undefined : toBase(input.budget, input.currency ?? "USD", await getRateTable()),
     days,
   };
   if (state.nights !== nights) state.nights = days.length;

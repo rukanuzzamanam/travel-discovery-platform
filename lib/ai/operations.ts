@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/currency";
 import { generateItinerary, itineraryPerPersonCost, rankActivities, STYLE_MULTIPLIER, toItem, transportItem } from "@/lib/travel/itinerary";
 import type { InterestKey } from "@/lib/travel/interests";
 import type { DestinationModel, ItineraryDay, TravelStyleKey } from "@/lib/travel/types";
@@ -10,7 +11,9 @@ import { computeTotals, type TripState } from "@/lib/travel/trip";
  */
 
 type Origin = { latitude: number; longitude: number; iata: string };
-export type OpContext = { dest: DestinationModel; origin: Origin };
+/** `fmt` formats a stored USD amount for the visitor (their currency). Defaults to plain USD. */
+export type OpContext = { dest: DestinationModel; origin: Origin; fmt?: (usd: number) => string };
+const money = (ctx: OpContext, usd: number) => (ctx.fmt ?? ((n: number) => formatCurrency(n, "USD")))(usd);
 export type OpResult = { state: TripState; changes: string[] };
 export type OperationName =
   | "reduceTripCost"
@@ -59,10 +62,10 @@ export function removeExpensiveActivities(s0: TripState, ctx: OpContext, thresho
       if (swap) {
         spare.splice(spare.indexOf(swap), 1);
         const item = toItem(swap, s.style);
-        changes.push(`Day ${d.day}: replaced "${i.title}" ($${i.costUsd} pp) with "${item.title}" ($${item.costUsd} pp)`);
+        changes.push(`Day ${d.day}: replaced "${i.title}" (${money(ctx, i.costUsd)} pp) with "${item.title}" (${money(ctx, item.costUsd)} pp)`);
         return [item];
       }
-      changes.push(`Day ${d.day}: removed "${i.title}" ($${i.costUsd} pp)`);
+      changes.push(`Day ${d.day}: removed "${i.title}" (${money(ctx, i.costUsd)} pp)`);
       return [];
     });
     if (!d.items.some((i) => i.category !== "transport")) {
@@ -100,7 +103,7 @@ export function reduceTripCost(s0: TripState, ctx: OpContext, amountUsd: number)
   }
   const saved = total(ctx, s0) - total(ctx, s);
   changes.push(
-    saved >= amountUsd ? `Estimated saving: $${saved} (target $${amountUsd})` : `Estimated saving: $${Math.max(0, saved)}. That is the most we could cut without dropping below 2 nights and Budget style.`,
+    saved >= amountUsd ? `Estimated saving: ${money(ctx, saved)} (target ${money(ctx, amountUsd)})` : `Estimated saving: ${money(ctx, Math.max(0, saved))}. That is the most we could cut without dropping below 2 nights and Budget style.`,
   );
   return { state: s, changes };
 }

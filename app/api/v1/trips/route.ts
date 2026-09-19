@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { api, ok } from "@/lib/http/api";
 import { LIMITS } from "@/lib/security/rate-limit";
-import { tripPlanSchema } from "@/lib/travel/schemas";
+import { tripPlanRequestSchema } from "@/lib/travel/schemas";
 import { createTrip } from "@/lib/travel/trip";
 import { getCurrentUser, getSessionId, requireUser } from "@/lib/auth/session";
 import { track } from "@/lib/analytics/track";
@@ -15,7 +15,7 @@ export const POST = api(
     } catch {
       body = null;
     }
-    const input = tripPlanSchema.parse(body);
+    const input = tripPlanRequestSchema.parse(body);
     const itinerarySlug = z.string().max(80).optional().parse((body as { itinerarySlug?: string }).itinerarySlug);
     const [user, sessionId] = await Promise.all([getCurrentUser(), getSessionId()]);
     const trip = await createTrip({ ...input, itinerarySlug }, user?.id);

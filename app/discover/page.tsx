@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
+import { Money } from "@/components/currency/currency-provider";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { randomInt } from "node:crypto";
 import { DiscoveryForm } from "@/components/travel/discovery-form";
 import { DiscoverResultCard, plannerHref } from "@/components/travel/discover-result-card";
 import { discover, recordSearch } from "@/lib/travel/discover";
-import { discoverSchema, paramsToObject } from "@/lib/travel/schemas";
+import { discoverRequestSchema, paramsToObject } from "@/lib/travel/schemas";
 import { getAirports } from "@/lib/travel/repository";
 import { getCurrentUser, getSessionId } from "@/lib/auth/session";
 import { track } from "@/lib/analytics/track";
-import { formatUsd, plural } from "@/lib/utils/format";
+import { plural } from "@/lib/utils/format";
 import { logger, errorMeta } from "@/lib/logger";
 
 // Search results are user-specific combinations: never index them.
@@ -25,7 +26,7 @@ export default async function DiscoverPage({ searchParams }: PageProps<"/discove
   const airports = await getAirports();
   const raw = paramsToObject(sp);
   const hasQuery = !!raw.origin || !!raw.budget;
-  const parsed = hasQuery ? discoverSchema.safeParse(raw) : null;
+  const parsed = hasQuery ? discoverRequestSchema.safeParse(raw) : null;
 
   const result = parsed?.success ? await discover(parsed.data) : null;
 
@@ -64,6 +65,7 @@ export default async function DiscoverPage({ searchParams }: PageProps<"/discove
         defaults={{
           origin: raw.origin,
           budget: raw.budget,
+          currency: raw.currency,
           startDate: raw.startDate,
           nights: raw.nights,
           travellers: raw.travellers,
@@ -85,7 +87,7 @@ export default async function DiscoverPage({ searchParams }: PageProps<"/discove
       {result && (
         <section className="mt-10" aria-labelledby="results-heading">
           <h2 id="results-heading" className="text-2xl font-bold">
-            {result.items.length} ideas from {result.originName} for {formatUsd(result.search.budget)}
+            {result.items.length} ideas from {result.originName} for <Money usd={result.search.budget} />
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {plural(result.search.nights, "night")} · {plural(result.search.travellers, "traveller")} · departing {result.search.startDate}. Every price is estimated from typical prices. None comes from a provider.

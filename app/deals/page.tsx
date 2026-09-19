@@ -1,9 +1,9 @@
 import Link from "next/link";
+import { Money } from "@/components/currency/currency-provider";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getActiveDeals } from "@/lib/travel/repository";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { PriceKindBadge } from "@/components/travel/price-kind-badge";
-import { formatUsd } from "@/lib/utils/format";
 
 export const revalidate = 1800;
 
@@ -29,7 +29,7 @@ export default async function DealsPage() {
               <h2 className="font-semibold">{d.title}</h2>
               {d.fromPriceUsd && (
                 <p className="mt-2 flex items-center gap-2">
-                  <span className="text-2xl font-bold">{formatUsd(d.fromPriceUsd)}</span>
+                  <span className="text-2xl font-bold"><Money usd={d.fromPriceUsd} /></span>
                   <PriceKindBadge kind={d.priceKind} variant="card" />
                 </p>
               )}

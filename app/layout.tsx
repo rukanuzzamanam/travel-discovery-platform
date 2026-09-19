@@ -7,6 +7,8 @@ import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { PageViewTracker } from "@/components/analytics/tracker";
 import { JsonLd } from "@/components/seo/json-ld";
 import { SITE, absoluteUrl } from "@/lib/site";
+import { CurrencyProvider } from "@/components/currency/currency-provider";
+import { getRateTable } from "@/lib/currency/fx-provider";
 
 const sans = Geist({ variable: "--font-sans", subsets: ["latin"], display: "swap" });
 const mono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"], display: "swap" });
@@ -55,7 +57,8 @@ const siteSchemas = [
   },
 ];
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const rates = await getRateTable();
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
@@ -65,11 +68,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        <SiteHeader />
-        <main id="main" className="flex-1">
-          {children}
-        </main>
-        <SiteFooter />
+        <CurrencyProvider table={rates}>
+          <SiteHeader />
+          <main id="main" className="flex-1">
+            {children}
+          </main>
+          <SiteFooter />
+        </CurrencyProvider>
         <PageViewTracker />
         <GoogleAnalytics id={process.env.NEXT_PUBLIC_GA_ID} />
         <JsonLd data={siteSchemas} />

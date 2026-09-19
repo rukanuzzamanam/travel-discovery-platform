@@ -6,6 +6,8 @@ import { getAirport, getDestinations } from "./repository";
 import { scoreDestination, type FactorResult } from "./scoring";
 import { addDays, nightsBetween, type DiscoverInput } from "./schemas";
 import { toEnum, type InterestKey } from "./interests";
+import { STATIC_RATE_TABLE, toBase, type RateTable } from "@/lib/currency";
+import { getRateTable } from "@/lib/currency/fx-provider";
 import type { CostBreakdown } from "./types";
 
 export type ResolvedSearch = {
@@ -40,14 +42,15 @@ export type DiscoverResult = { search: ResolvedSearch; items: DiscoverItem[]; or
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
-export function resolveSearch(input: DiscoverInput): ResolvedSearch {
+export function resolveSearch(input: DiscoverInput, table: RateTable = STATIC_RATE_TABLE): ResolvedSearch {
   const startDate = input.startDate ?? addDays(todayIso(), 30);
   const nights = input.endDate ? nightsBetween(startDate, input.endDate) : (input.nights ?? 7);
   if (nights < 1 || nights > 30) throw new ApiError("VALIDATION_ERROR", "Trips must be between 1 and 30 nights");
   const endDate = input.endDate ?? addDays(startDate, nights);
   return {
     origin: input.origin,
-    budget: input.budget,
+    // The typed budget is in `input.currency` (USD when omitted); everything downstream is USD.
+    budget: toBase(input.budget, input.currency ?? "USD", table),
     startDate,
     endDate,
     nights,
@@ -60,7 +63,7 @@ export function resolveSearch(input: DiscoverInput): ResolvedSearch {
 
 /** Ranks published destinations for a search. Pure with respect to the DB except for reading reference data. */
 export async function discover(input: DiscoverInput, limit = 12): Promise<DiscoverResult> {
-  const search = resolveSearch(input);
+  const search = resolveSearch(input, await getRateTable());
   const origin = await getAirport(search.origin);
   if (!origin) throw new ApiError("VALIDATION_ERROR", `Unknown origin airport: ${search.origin}`);
 

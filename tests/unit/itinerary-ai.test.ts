@@ -105,8 +105,11 @@ describe("AI trip operations (deterministic, catalogue-only)", () => {
 
 describe("request interpretation (rules fallback)", () => {
   it.each([
-    ["Make this trip $300 cheaper", { operation: "reduceTripCost", amountUsd: 300 }],
-    ["Save $1,200 please", { operation: "reduceTripCost", amountUsd: 1200 }],
+    ["Make this trip $300 cheaper", { operation: "reduceTripCost", amount: 300 }],
+    ["Make this trip €250 cheaper", { operation: "reduceTripCost", amount: 250 }],
+    ["take £400 off please save", { operation: "reduceTripCost", amount: 400 }],
+    ["I want to save 500 aud", { operation: "reduceTripCost", amount: 500 }],
+    ["Save $1,200 please", { operation: "reduceTripCost", amount: 1200 }],
     ["upgrade this to something nicer", { operation: "upgradeTrip" }],
     ["make it family friendly for the kids", { operation: "makeFamilyFriendly" }],
     ["add some beach time", { operation: "addBeachActivities" }],

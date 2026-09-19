@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { CostBreakdownList } from "@/components/travel/cost-breakdown";
 import { EstimateBadge } from "@/components/travel/estimate-badge";
 import { PriceKindBadge } from "@/components/travel/price-kind-badge";
-import { formatUsd } from "@/lib/utils/format";
+import { Money, useAmountConverters } from "@/components/currency/currency-provider";
+import { formatCurrency, type Currency } from "@/lib/currency";
 import type { CostBreakdown, ItineraryDay, ItineraryItem } from "@/lib/travel/types";
 import { cn } from "@/lib/utils";
 
@@ -22,18 +23,22 @@ type Props = {
   readOnly?: boolean;
 };
 
-const QUICK = [
-  { label: "Make it $300 cheaper", body: { operation: "reduceTripCost", amountUsd: 300 } },
-  { label: "Upgrade the trip", body: { operation: "upgradeTrip" } },
-  { label: "Family-friendly", body: { operation: "makeFamilyFriendly" } },
-  { label: "Add beach time", body: { operation: "addBeachActivities" } },
-  { label: "Drop pricey activities", body: { operation: "removeExpensiveActivities" } },
-  { label: "Shorten by a day", body: { operation: "shortenTrip", days: 1 } },
-  { label: "Add a day", body: { operation: "extendTrip", days: 1 } },
-] as const;
+const quickActions = (currency: Currency) =>
+  [
+    { label: `Make it ${formatCurrency(300, currency)} cheaper`, body: { operation: "reduceTripCost", amount: 300 } },
+    { label: "Upgrade the trip", body: { operation: "upgradeTrip" } },
+    { label: "Family-friendly", body: { operation: "makeFamilyFriendly" } },
+    { label: "Add beach time", body: { operation: "addBeachActivities" } },
+    { label: "Drop pricey activities", body: { operation: "removeExpensiveActivities" } },
+    { label: "Shorten by a day", body: { operation: "shortenTrip", days: 1 } },
+    { label: "Add a day", body: { operation: "extendTrip", days: 1 } },
+  ] as const;
 
 export function TripWorkspace({ token, initialDays, initialTotals, travellers, budget, style: initialStyle, readOnly }: Props) {
   const router = useRouter();
+  const { currency, toDisplay, toStored } = useAmountConverters();
+  // Text being typed in a price box (kept as typed until the box loses focus, so rounding never fights the cursor).
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [days, setDays] = useState(initialDays);
   const [totals, setTotals] = useState(initialTotals);
   const [style, setStyle] = useState(initialStyle);
@@ -73,7 +78,7 @@ export function TripWorkspace({ token, initialDays, initialTotals, travellers, b
   const ask = (body: Record<string, unknown>) =>
     run(async () => {
       if (dirty) await save();
-      const data = await call("/api/v1/itinerary", { method: "POST", body: JSON.stringify({ token, ...body }) });
+      const data = await call("/api/v1/itinerary", { method: "POST", body: JSON.stringify({ token, currency, ...body }) });
       setDays(data.state.days);
       setTotals(data.totals);
       setStyle(data.state.style);
@@ -128,14 +133,24 @@ export function TripWorkspace({ token, initialDays, initialTotals, travellers, b
                   </div>
                   <div className="flex items-center gap-2">
                     {readOnly ? (
-                      <span className="text-sm font-medium tabular-nums">{item.costUsd === 0 ? "Free" : formatUsd(item.costUsd)}</span>
+                      <span className="text-sm font-medium tabular-nums">{item.costUsd === 0 ? "Free" : <Money usd={item.costUsd} />}</span>
                     ) : (
                       <Input
-                        aria-label={`Cost per person for ${item.title} in USD`}
+                        aria-label={`Cost per person for ${item.title} in ${currency}`}
                         type="number"
                         min={0}
-                        value={item.costUsd}
-                        onChange={(e) => updateItem(di, ii, { costUsd: Math.max(0, Number(e.target.value) || 0), priceKind: "USER" })}
+                        value={drafts[`${di}-${ii}`] ?? String(toDisplay(item.costUsd))}
+                        onChange={(e) => {
+                          setDrafts((d) => ({ ...d, [`${di}-${ii}`]: e.target.value }));
+                          updateItem(di, ii, { costUsd: Math.max(0, toStored(Number(e.target.value) || 0)), priceKind: "USER" });
+                        }}
+                        onBlur={() =>
+                          setDrafts((d) => {
+                            const next = { ...d };
+                            delete next[`${di}-${ii}`];
+                            return next;
+                          })
+                        }
                         className="h-9 w-24"
                       />
                     )}
@@ -180,7 +195,7 @@ export function TripWorkspace({ token, initialDays, initialTotals, travellers, b
           </p>
           {budget !== undefined && (
             <p className={cn("mt-2 text-sm font-medium", over ? "text-amber-700" : "text-emerald-700")}>
-              {over ? `${formatUsd(totals.total - budget)} over` : `${formatUsd(budget - totals.total)} under`} your {formatUsd(budget)} budget
+              <Money usd={Math.abs(budget - totals.total)} /> {over ? "over" : "under"} your <Money usd={budget} /> budget
             </p>
           )}
           {!readOnly && (
@@ -208,7 +223,7 @@ export function TripWorkspace({ token, initialDays, initialTotals, travellers, b
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">Edits use your trip&apos;s own activity data. It can&apos;t make up prices.</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              {QUICK.map((q) => (
+              {quickActions(currency).map((q) => (
                 <button key={q.label} type="button" disabled={busy} onClick={() => ask(q.body)} className="rounded-full border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50">
                   {q.label}
                 </button>

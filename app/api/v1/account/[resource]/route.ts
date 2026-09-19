@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth/session";
 import { getAirport, getDestinationBySlug } from "@/lib/travel/repository";
 import { INTERESTS, toEnum } from "@/lib/travel/interests";
 import { styleSchema } from "@/lib/travel/schemas";
+import { SUPPORTED_CURRENCIES } from "@/lib/currency";
 
 /** Authenticated account resources: preferences, saved-destinations, price-alerts. */
 
@@ -14,6 +15,7 @@ const prefs = z.object({
   travelStyle: styleSchema.optional(),
   interests: z.array(z.enum(INTERESTS)).max(10).optional(),
   emailAlerts: z.boolean().optional(),
+  currency: z.string().trim().toUpperCase().pipe(z.enum(SUPPORTED_CURRENCIES)).optional(),
 });
 const slugBody = z.object({ slug: z.string().trim().min(1).max(80) });
 const alertBody = z.object({

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Money } from "@/components/currency/currency-provider";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
@@ -13,7 +14,6 @@ import { itineraryDaysSchema } from "@/lib/travel/itinerary-schema";
 import { dayCost } from "@/lib/travel/itinerary";
 import { addDays } from "@/lib/travel/schemas";
 import { DEFAULT_ORIGIN } from "@/lib/site";
-import { formatUsd } from "@/lib/utils/format";
 
 export const revalidate = 3600;
 
@@ -65,7 +65,7 @@ export default async function ItineraryPage({ params }: PageProps<"/itineraries/
       <h1 className="mt-4 text-3xl font-bold sm:text-4xl">{i.title}</h1>
       <p className="mt-2 text-lg text-muted-foreground">{i.description}</p>
       <p className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-        On-the-ground activities and meals: about <strong>{formatUsd(perPerson)}</strong> per person <EstimateBadge />
+        On-the-ground activities and meals: about <strong><Money usd={perPerson} /></strong> per person <EstimateBadge />
         <span className="text-muted-foreground">(excludes flights and hotel)</span>
       </p>
 
@@ -103,7 +103,7 @@ export default async function ItineraryPage({ params }: PageProps<"/itineraries/
                       {it.notes ? ` · ${it.notes}` : ""}
                     </p>
                   </div>
-                  <p className="shrink-0 font-medium tabular-nums">{it.costUsd === 0 ? "Free" : `≈ ${formatUsd(it.costUsd)}`}</p>
+                  <p className="shrink-0 font-medium tabular-nums">{it.costUsd === 0 ? "Free" : <>≈ <Money usd={it.costUsd} /></>}</p>
                 </li>
               ))}
             </ul>

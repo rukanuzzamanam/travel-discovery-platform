@@ -56,6 +56,7 @@ npm run dev                   # http://localhost:3000
 | `TRAVELPOUTS_TRS`, `TRAVELPOUTS_PROGRAM_FLIGHTS/HOTELS/ACTIVITIES/CARS` | optional | Project id and program ids for `tp.media` partner links (copy from your dashboard) |
 | `TRAVELPOUTS_WHITE_LABEL_URL` | optional | e.g. `https://search.example.com` |
 | `AI_API_KEY`, `AI_MODEL` | optional | Server-only. Without a key the rule-based interpreter is used |
+| `FX_RATES_JSON`, `FX_RATES_AS_OF` | optional | Override the static development exchange rates. **Not live rates.** See [docs/currency.md](docs/currency.md) |
 | `NEXT_PUBLIC_GA_ID` | optional | `G-XXXXXXX` |
 | `SENTRY_DSN` | optional | See `instrumentation.ts` for wiring |
 
@@ -84,7 +85,7 @@ E2E_BASE_URL=http://localhost:3100 npm run test:e2e   # 46 HTTP tests (SEO, redi
 
 - [Architecture](docs/architecture.md) · [Database](docs/database.md) · [Travelpayouts](docs/travelpayouts.md)
 - [SEO](docs/seo.md) · [Deployment](docs/deployment.md) · [Revenue tracking](docs/revenue-tracking.md)
-- [Development workflow and rollback](docs/development-workflow.md)
+- [Currency](docs/currency.md) · [Development workflow and rollback](docs/development-workflow.md)
 
 ## Admin setup
 

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { safeInternalPath } from "@/lib/security/sanitize";
+import { syncCurrencyFromAccount } from "@/components/currency/currency-provider";
 
 const schema = z.object({
   name: z.string().trim().max(80).optional(),
@@ -39,6 +40,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "register"; next?: st
       setError(json.error?.message ?? "Something went wrong");
       return;
     }
+    if (mode === "login") await syncCurrencyFromAccount();
     router.push(safeInternalPath(next, "/account"));
     router.refresh();
   }

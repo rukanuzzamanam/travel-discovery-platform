@@ -1,6 +1,6 @@
 import { db } from "@/lib/db/client";
 import { Table } from "@/components/admin/admin-ui";
-import { formatUsd } from "@/lib/utils/format";
+import { formatCurrency } from "@/lib/currency";
 
 export default async function AdminSearches() {
   const searches = await db.search.findMany({ orderBy: { createdAt: "desc" }, take: 100, include: { results: { orderBy: { rank: "asc" }, take: 1, include: { destination: { select: { name: true } } } } } });
@@ -13,7 +13,7 @@ export default async function AdminSearches() {
           s.createdAt.toISOString().slice(0, 16).replace("T", " "),
           s.kind,
           s.origin ?? "–",
-          s.budgetUsd ? formatUsd(s.budgetUsd) : "–",
+          s.budgetUsd ? formatCurrency(s.budgetUsd, "USD") : "–",
           s.nights ?? "–",
           s.travellers ?? "–",
           s.interests.join(", ").toLowerCase() || "–",

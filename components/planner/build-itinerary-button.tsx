@@ -12,6 +12,8 @@ export type BuildPayload = {
   endDate: string;
   travellers: number;
   budget?: number;
+  /** Currency `budget` is expressed in. */
+  currency?: string;
   style: string;
   interests: string[];
   itinerarySlug?: string;
