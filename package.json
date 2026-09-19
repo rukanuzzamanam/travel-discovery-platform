@@ -61,7 +61,8 @@
     "tailwindcss": "^4",
     "tsx": "^4.23.13",
     "typescript": "^5",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "wait-on": "^9.1.0"
   },
   "allowScripts": {
     "@embedded-postgres/windows-x64@18.4.0-beta.17": true,

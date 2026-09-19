@@ -46,3 +46,8 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+      - name: End-to-end tests
+        run: |
+          npx next start -p 3100 &
+          npx wait-on http://localhost:3100/robots.txt --timeout 60000
+          E2E_BASE_URL=http://localhost:3100 npm run test:e2e
