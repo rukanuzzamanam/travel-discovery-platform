@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { DestinationCard, type DestinationCardData } from "./destination-card";
 
-export type RailItem = { destination: DestinationCardData; fromUsd?: number; fromLabel?: string };
+export type RailItem = { destination: DestinationCardData; fromUsd?: number; fromLabel?: string; priceKind?: import("@/lib/travel/types").PriceKindKey };
 
 export function DestinationRail({
   id,
@@ -38,7 +38,7 @@ export function DestinationRail({
       <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((i) => (
           <li key={i.destination.slug}>
-            <DestinationCard destination={i.destination} fromUsd={i.fromUsd} fromLabel={i.fromLabel} />
+            <DestinationCard destination={i.destination} fromUsd={i.fromUsd} fromLabel={i.fromLabel} priceKind={i.priceKind} />
           </li>
         ))}
       </ul>

@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { Baby, CalendarDays, Clock, Sun, Wallet } from "lucide-react";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { DestImage } from "@/components/travel/dest-image";
-import { EstimateBadge } from "@/components/travel/estimate-badge";
 import { Faq } from "@/components/destination/faq";
 import { DestinationCard } from "@/components/destination/destination-card";
 import { CostEstimator } from "@/components/planner/cost-estimator";
@@ -115,7 +114,7 @@ export default async function DestinationPage({ params }: PageProps<"/destinatio
             How much does a trip to {d.name} cost?
           </h2>
           <p className="mb-4 mt-1 text-muted-foreground">
-            Adjust the details to see an estimated total. Figures are <EstimateBadge className="align-middle" /> based on typical prices, not live quotes.
+            Adjust the details to see an <strong>estimated trip cost</strong> based on typical prices. Each line shows whether it is estimated.
           </p>
           <CostEstimator destination={modelForClient} airports={airports} />
         </section>
@@ -130,7 +129,7 @@ export default async function DestinationPage({ params }: PageProps<"/destinatio
               <thead className="bg-muted/60 text-muted-foreground">
                 <tr>
                   <th scope="col" className="px-4 py-3 font-medium">Item</th>
-                  <th scope="col" className="px-4 py-3 font-medium">Estimate (USD)</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Estimated (USD)</th>
                 </tr>
               </thead>
               <tbody className="divide-y">

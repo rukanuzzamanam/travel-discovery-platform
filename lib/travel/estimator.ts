@@ -68,6 +68,7 @@ export function estimateTripCost(
     transport,
     total: flight + hotel + food + activities + transport,
     kind: "ESTIMATE",
+    kinds: { flight: "ESTIMATE", hotel: "ESTIMATE", food: "ESTIMATE", activities: "ESTIMATE", transport: "ESTIMATE" },
     distanceKm: Math.round(distanceKm),
     nights,
   };

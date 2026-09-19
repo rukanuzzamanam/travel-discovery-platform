@@ -5,6 +5,7 @@ import { Plane } from "lucide-react";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { AffiliateLink } from "@/components/affiliate/affiliate-link";
 import { EstimateBadge } from "@/components/travel/estimate-badge";
+import { PriceKindBadge } from "@/components/travel/price-kind-badge";
 import { Faq } from "@/components/destination/faq";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getActiveDeals, getAirport, getDestinationBySlug } from "@/lib/travel/repository";
@@ -59,7 +60,7 @@ export default async function CheapFlightsPage({ params }: PageProps<"/cheap-fli
           Cheap flights from {r.origin.city} to {r.dest.name}
         </h1>
         <p className="mt-3 flex flex-wrap items-center gap-2 text-lg">
-          Typical return fare: <strong>{formatUsd(opts.estimate.priceUsd)}</strong> <EstimateBadge label="Estimate" />
+          Typical return fare: <strong>{formatUsd(opts.estimate.priceUsd)}</strong> <EstimateBadge />
         </p>
         <p className="mt-1 text-sm text-muted-foreground">{opts.estimate.note}</p>
       </header>
@@ -74,7 +75,7 @@ export default async function CheapFlightsPage({ params }: PageProps<"/cheap-fli
             {opts.providerPrices.map((p) => (
               <li key={`${p.priceUsd}-${p.departAt}`} className="flex justify-between p-3">
                 <span>{p.departAt ? p.departAt.slice(0, 10) : "Flexible dates"}</span>
-                <span className="font-semibold">{formatUsd(p.priceUsd)}</span>
+                <span className="flex items-center gap-2 font-semibold">{formatUsd(p.priceUsd)} <PriceKindBadge kind="PROVIDER" /></span>
               </li>
             ))}
           </ul>

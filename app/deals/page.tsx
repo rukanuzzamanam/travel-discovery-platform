@@ -2,7 +2,7 @@ import Link from "next/link";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getActiveDeals } from "@/lib/travel/repository";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
-import { EstimateBadge } from "@/components/travel/estimate-badge";
+import { PriceKindBadge } from "@/components/travel/price-kind-badge";
 import { formatUsd } from "@/lib/utils/format";
 
 export const revalidate = 1800;
@@ -20,7 +20,7 @@ export default async function DealsPage() {
       <Breadcrumbs items={[{ name: "Home", path: "/" }, { name: "Deals", path: "/deals" }]} />
       <h1 className="mt-4 text-3xl font-bold sm:text-4xl">Travel deals</h1>
       <p className="mt-2 max-w-2xl text-muted-foreground">
-        Prices here are typical fares based on our estimates, not live offers. Use them as a benchmark, then check live prices with our partners.
+        The fares here are estimates of typical prices, not offers. Use them as a benchmark, then check the provider for current availability and final pricing.
       </p>
       <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {deals.map((d) => (
@@ -30,7 +30,7 @@ export default async function DealsPage() {
               {d.fromPriceUsd && (
                 <p className="mt-2 flex items-center gap-2">
                   <span className="text-2xl font-bold">{formatUsd(d.fromPriceUsd)}</span>
-                  <EstimateBadge label="Typical fare" />
+                  <PriceKindBadge kind={d.priceKind} variant="card" />
                 </p>
               )}
               <p className="mt-2 text-sm text-muted-foreground">{d.description}</p>

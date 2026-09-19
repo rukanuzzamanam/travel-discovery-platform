@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CostBreakdownList } from "@/components/travel/cost-breakdown";
 import { EstimateBadge } from "@/components/travel/estimate-badge";
+import { PriceKindBadge } from "@/components/travel/price-kind-badge";
 import { formatUsd } from "@/lib/utils/format";
 import type { CostBreakdown, ItineraryDay, ItineraryItem } from "@/lib/travel/types";
 import { cn } from "@/lib/utils";
@@ -138,9 +139,7 @@ export function TripWorkspace({ token, initialDays, initialTotals, travellers, b
                         className="h-9 w-24"
                       />
                     )}
-                    <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-medium", item.priceKind === "USER" ? "bg-amber-100 text-amber-900" : "bg-secondary")}>
-                      {item.priceKind === "USER" ? "Your price" : "Estimate"}
-                    </span>
+                    <PriceKindBadge kind={item.priceKind} />
                   </div>
                   {!readOnly && (
                     <div className="flex">

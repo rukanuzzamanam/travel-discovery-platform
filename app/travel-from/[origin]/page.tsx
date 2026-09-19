@@ -27,7 +27,7 @@ export default async function TravelFromPage({ params }: PageProps<"/travel-from
   const o = await originFromSlug(slug);
   if (!o) notFound();
   const res = await discover({ origin: o.iata, budget: 3000, nights: 7, travellers: 2, interests: [], style: "MID_RANGE" }, 12);
-  const items = res.items.map((i) => ({ destination: i, fromUsd: i.cost.total, fromLabel: "Est. 7 nights, 2 travellers" }));
+  const items = res.items.map((i) => ({ destination: i, fromUsd: i.cost.total, fromLabel: "7 nights, 2 travellers" }));
   if (items.length < 3) notFound();
   const path = `/travel-from/${slug}`;
   return (

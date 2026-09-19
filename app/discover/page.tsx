@@ -88,8 +88,7 @@ export default async function DiscoverPage({ searchParams }: PageProps<"/discove
             {result.items.length} ideas from {result.originName} for {formatUsd(result.search.budget)}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {plural(result.search.nights, "night")} · {plural(result.search.travellers, "traveller")} · departing {result.search.startDate}. All costs are
-            estimates based on typical prices; live prices appear when you check availability.
+            {plural(result.search.nights, "night")} · {plural(result.search.travellers, "traveller")} · departing {result.search.startDate}. Every price is estimated from typical prices. None comes from a provider.
           </p>
           <div className="mt-6 grid gap-6">
             {result.items.map((item, i) => (

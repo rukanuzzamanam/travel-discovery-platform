@@ -18,7 +18,7 @@ export default async function HotelsPage() {
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
       <Breadcrumbs items={[{ name: "Home", path: "/" }, { name: "Hotels", path: "/hotels" }]} />
       <h1 className="mt-4 text-3xl font-bold sm:text-4xl">Hotels</h1>
-      <p className="mt-2 max-w-2xl text-muted-foreground">Estimated typical room prices per night (USD). Live prices and availability come from our booking partners.</p>
+      <p className="mt-2 max-w-2xl text-muted-foreground">Estimated typical room prices per night (USD). Providers show current availability and final pricing.</p>
       <div className="mt-8 overflow-x-auto rounded-xl border bg-card">
         <table className="w-full text-left text-sm">
           <caption className="sr-only">Estimated hotel prices per night by destination</caption>

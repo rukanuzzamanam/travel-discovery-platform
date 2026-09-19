@@ -3,7 +3,7 @@ import { Compass, Sparkles, Wallet, Map } from "lucide-react";
 import { DiscoveryForm } from "@/components/travel/discovery-form";
 import { DestinationRail, type RailItem } from "@/components/destination/destination-rail";
 import { DestImage } from "@/components/travel/dest-image";
-import { EstimateBadge } from "@/components/travel/estimate-badge";
+import { PriceKindBadge } from "@/components/travel/price-kind-badge";
 import { NewsletterForm } from "@/components/layout/newsletter-form";
 import { buttonVariants } from "@/components/ui/button";
 import { discover } from "@/lib/travel/discover";
@@ -22,7 +22,7 @@ export const metadata = buildMetadata({
 });
 
 const tripRail = (items: Awaited<ReturnType<typeof discover>>["items"]): RailItem[] =>
-  items.filter((i) => i.withinBudget).slice(0, 4).map((i) => ({ destination: i, fromUsd: i.cost.total, fromLabel: "Est. 5-night trip" }));
+  items.filter((i) => i.withinBudget).slice(0, 4).map((i) => ({ destination: i, fromUsd: i.cost.total, fromLabel: "5-night trip" }));
 
 export default async function HomePage() {
   const [airports, destinations, deals, guides, b1000, b1500, weekend] = await Promise.all([
@@ -139,7 +139,7 @@ export default async function HomePage() {
                     {d.fromPriceUsd && (
                       <p className="mt-2 flex items-center gap-2">
                         <span className="text-2xl font-bold">{formatUsd(d.fromPriceUsd)}</span>
-                        <EstimateBadge label="Typical fare" />
+                        <PriceKindBadge kind={d.priceKind} variant="card" />
                       </p>
                     )}
                     <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{d.description}</p>

@@ -49,8 +49,12 @@ export type CostBreakdown = {
   activities: number;
   transport: number;
   total: number;
-  /** Every figure here comes from our estimation model, not a live provider quote. */
+  /** The total is always an estimate: it is built from our model unless a component says otherwise. */
   kind: "ESTIMATE";
+  /** Where each component comes from (existing price-kind model). Estimator output is ESTIMATE for all. */
+  kinds: Record<"flight" | "hotel" | "food" | "activities" | "transport", PriceKindKey>;
+  /** True when some itinerary activity prices were typed in by the user (mixed with estimates). */
+  includesUserPrices?: boolean;
 };
 
 export type TripInput = {

@@ -38,7 +38,7 @@ export default async function WeekendPage({ params }: PageProps<"/weekend-getawa
         <h1 className="mt-4 text-3xl font-bold sm:text-4xl">Weekend getaways from {o.city}</h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">Three-night trips with flights of about five hours or less each way. Costs are estimates for two travellers.</p>
       </div>
-      <DestinationRail id="wk" title="Best short escapes" items={near.slice(0, 8).map((i) => ({ destination: i, fromUsd: i.cost.total, fromLabel: "Est. 3 nights" }))} />
+      <DestinationRail id="wk" title="Best short escapes" items={near.slice(0, 8).map((i) => ({ destination: i, fromUsd: i.cost.total, fromLabel: "3 nights" }))} />
     </div>
   );
 }

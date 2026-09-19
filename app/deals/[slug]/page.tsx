@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { Plane } from "lucide-react";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { AffiliateLink } from "@/components/affiliate/affiliate-link";
-import { EstimateBadge } from "@/components/travel/estimate-badge";
+import { PriceKindBadge } from "@/components/travel/price-kind-badge";
+import { PriceDisclaimer } from "@/components/travel/price-disclaimer";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getActiveDeals } from "@/lib/travel/repository";
 import { createLink, withSource } from "@/lib/affiliate/links";
@@ -36,7 +37,7 @@ export default async function DealPage({ params }: PageProps<"/deals/[slug]">) {
       {d.fromPriceUsd && (
         <p className="mt-4 flex items-center gap-3">
           <span className="text-4xl font-bold">{formatUsd(d.fromPriceUsd)}</span>
-          <EstimateBadge label="Typical return fare" />
+          <PriceKindBadge kind={d.priceKind} variant="card" />
         </p>
       )}
       <p className="mt-4 text-muted-foreground">{d.description}</p>
@@ -50,7 +51,7 @@ export default async function DealPage({ params }: PageProps<"/deals/[slug]">) {
           About {d.destination.name}
         </Link>
       </div>
-      <p className="mt-6 text-sm text-muted-foreground">Fares vary by date and demand. The figure above is our estimate of a typical return economy fare, not an offer.</p>
+      <PriceDisclaimer className="mt-6 text-sm">The figure above is an estimated typical return economy fare, not an offer. The provider sets the final fare.</PriceDisclaimer>
     </div>
   );
 }

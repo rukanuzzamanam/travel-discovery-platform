@@ -96,7 +96,7 @@ export async function discover(input: DiscoverInput, limit = 12): Promise<Discov
         airportCode: destination.airportCode,
         score,
         factors,
-        cost: { flight: cost.flight, hotel: cost.hotel, food: cost.food, activities: cost.activities, transport: cost.transport, total: cost.total, kind: "ESTIMATE" },
+        cost: { flight: cost.flight, hotel: cost.hotel, food: cost.food, activities: cost.activities, transport: cost.transport, total: cost.total, kind: "ESTIMATE", kinds: cost.kinds },
         withinBudget,
         flightHours: flightHours(cost.distanceKm),
         seasonNote: destination.bestMonths.includes(search.month) ? "best" : destination.avoidMonths.includes(search.month) ? "avoid" : "shoulder",

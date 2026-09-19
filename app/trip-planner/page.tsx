@@ -10,6 +10,7 @@ import { generateItinerary } from "@/lib/travel/itinerary";
 import { computeTotals } from "@/lib/travel/trip";
 import { createLink, withSource } from "@/lib/affiliate/links";
 import { DEFAULT_ORIGIN } from "@/lib/site";
+import { PRICE_DISCLAIMER } from "@/lib/travel/price-kind";
 import { formatUsd, plural } from "@/lib/utils/format";
 import { Plane, Hotel } from "lucide-react";
 import type { InterestKey } from "@/lib/travel/interests";
@@ -117,7 +118,7 @@ export default async function TripPlannerPage({ searchParams }: PageProps<"/trip
             <h2 id="live" className="text-lg font-semibold">
               Check live prices
             </h2>
-            <p className="mb-4 mt-1 text-sm text-muted-foreground">Estimates are a guide. See live fares and rooms for your exact dates with our booking partners.</p>
+            <p className="mb-4 mt-1 text-sm text-muted-foreground">{PRICE_DISCLAIMER}</p>
             <div className="grid gap-3">
               <AffiliateLink href={estimate.flightPath}>
                 <Plane aria-hidden /> Flights

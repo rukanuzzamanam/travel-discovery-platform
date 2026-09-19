@@ -3,6 +3,7 @@ import { Plane } from "lucide-react";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { AffiliateLink } from "@/components/affiliate/affiliate-link";
 import { EstimateBadge } from "@/components/travel/estimate-badge";
+import { PriceKindBadge } from "@/components/travel/price-kind-badge";
 import { TrackOnMount } from "@/components/analytics/tracker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,7 +87,7 @@ export default async function FlightsPage({ searchParams }: PageProps<"/flights"
                 {result.providerPrices.map((p) => (
                   <li key={`${p.priceUsd}-${p.departAt}`} className="flex justify-between p-3 text-sm">
                     <span>{p.departAt?.slice(0, 10) ?? "Flexible"}{p.airline ? ` · ${p.airline}` : ""}</span>
-                    <span className="font-semibold">{formatUsd(p.priceUsd)}</span>
+                    <span className="flex items-center gap-2 font-semibold">{formatUsd(p.priceUsd)} <PriceKindBadge kind="PROVIDER" /></span>
                   </li>
                 ))}
               </ul>

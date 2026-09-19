@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { MapPin } from "lucide-react";
 import { DestImage } from "@/components/travel/dest-image";
-import { EstimateBadge } from "@/components/travel/estimate-badge";
+import { PriceKindBadge } from "@/components/travel/price-kind-badge";
+import type { PriceKindKey } from "@/lib/travel/types";
 import { formatUsd } from "@/lib/utils/format";
 
 export type DestinationCardData = {
@@ -17,11 +18,14 @@ export function DestinationCard({
   destination,
   fromUsd,
   fromLabel = "Flights from",
+  priceKind = "ESTIMATE",
   priority,
 }: {
   destination: DestinationCardData;
   fromUsd?: number;
   fromLabel?: string;
+  /** Where the displayed price comes from. Estimated unless a provider supplied it. */
+  priceKind?: PriceKindKey;
   priority?: boolean;
 }) {
   return (
@@ -50,7 +54,7 @@ export function DestinationCard({
           <p className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">{fromLabel}</span>
             <span className="font-semibold">{formatUsd(fromUsd)}</span>
-            <EstimateBadge />
+            <PriceKindBadge kind={priceKind} variant="card" />
           </p>
         )}
       </div>

@@ -42,7 +42,7 @@ export default async function BudgetPage({ params }: PageProps<"/travel-budget/[
           Estimated total for one traveller, five nights, budget style, flying from Sydney. <Link className="text-primary underline" href={`/discover?origin=${DEFAULT_ORIGIN}&budget=${amount}&nights=5&travellers=1&style=BUDGET`}>Change your city, dates and interests</Link>.
         </p>
       </div>
-      <DestinationRail id="fits" title={`Trips within ${formatUsd(amount)}`} items={fits.slice(0, 8).map((i) => ({ destination: i, fromUsd: i.cost.total, fromLabel: "Est. total" }))} />
+      <DestinationRail id="fits" title={`Trips within ${formatUsd(amount)}`} items={fits.slice(0, 8).map((i) => ({ destination: i, fromUsd: i.cost.total, fromLabel: "Total" }))} />
       <nav aria-label="Other budgets" className="flex flex-wrap gap-2">
         {BUDGET_PAGES.filter((b) => b !== amount).map((b) => (
           <Link key={b} href={`/travel-budget/${b}`} className="rounded-full border px-4 py-2 text-sm font-medium hover:bg-muted">

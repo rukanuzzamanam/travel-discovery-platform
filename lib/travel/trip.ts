@@ -30,6 +30,9 @@ export function computeTotals(dest: DestinationModel, origin: { latitude: number
   const month = new Date(`${s.startDate}T00:00:00Z`).getUTCMonth() + 1;
   const base = estimateTripCost(dest, origin, { origin: origin.iata, nights: s.nights, travellers: s.travellers, style: s.style, month });
   const activities = Math.round(itineraryPerPersonCost(s.days) * s.travellers);
+  const activityItems = s.days.flatMap((d) => d.items).filter((i) => (i.category === "activity" || i.category === "attraction") && i.costUsd > 0);
+  const userCount = activityItems.filter((i) => i.priceKind === "USER").length;
+  const allUser = activityItems.length > 0 && userCount === activityItems.length;
   return {
     flight: base.flight,
     hotel: base.hotel,
@@ -38,6 +41,8 @@ export function computeTotals(dest: DestinationModel, origin: { latitude: number
     activities,
     total: base.flight + base.hotel + base.food + base.transport + activities,
     kind: "ESTIMATE",
+    kinds: { ...base.kinds, activities: allUser ? "USER" : "ESTIMATE" },
+    includesUserPrices: userCount > 0 && !allUser,
     distanceKm: base.distanceKm,
   };
 }
@@ -90,6 +95,11 @@ export async function createTrip(input: TripPlanInput & { itinerarySlug?: string
   return { id: trip.id, token: trip.shareToken, state, totals, destination: dest };
 }
 
+function kindOf(type: "FLIGHT" | "HOTEL" | "FOOD" | "TRANSPORT" | "ACTIVITY", t: TripTotals) {
+  const key = { FLIGHT: "flight", HOTEL: "hotel", FOOD: "food", TRANSPORT: "transport", ACTIVITY: "activities" } as const;
+  return t.kinds[key[type]];
+}
+
 function itemRows(tripId: string, t: TripTotals) {
   return [
     { type: "FLIGHT" as const, label: "Flights", amountUsd: t.flight },
@@ -97,7 +107,7 @@ function itemRows(tripId: string, t: TripTotals) {
     { type: "FOOD" as const, label: "Food", amountUsd: t.food },
     { type: "TRANSPORT" as const, label: "Local transport", amountUsd: t.transport },
     { type: "ACTIVITY" as const, label: "Activities", amountUsd: t.activities },
-  ].map((r) => ({ ...r, tripId, priceKind: "ESTIMATE" as const }));
+  ].map((r) => ({ ...r, tripId, priceKind: kindOf(r.type, t) }));
 }
 
 /** Replace a trip's days/activities/budget lines with the given state (used on create and on every save). */

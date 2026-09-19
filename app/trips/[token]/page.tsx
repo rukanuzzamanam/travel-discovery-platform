@@ -10,6 +10,7 @@ import { createLink, withSource } from "@/lib/affiliate/links";
 import { getCurrentUser } from "@/lib/auth/session";
 import { addDays } from "@/lib/travel/schemas";
 import { plural } from "@/lib/utils/format";
+import { PRICE_DISCLAIMER } from "@/lib/travel/price-kind";
 
 // User-specific trip pages must never be indexed.
 export const metadata: Metadata = { title: "Your trip", robots: { index: false, follow: false } };
@@ -57,7 +58,7 @@ export default async function TripPage({ params }: PageProps<"/trips/[token]">) 
         <h2 id="live-prices" className="text-xl font-bold">
           Ready to book? Check live prices
         </h2>
-        <p className="mb-4 mt-1 text-sm text-muted-foreground">Our estimates are a planning guide. Partners show live prices and availability for your dates. We may earn a commission at no extra cost to you.</p>
+        <p className="mb-4 mt-1 text-sm text-muted-foreground">{PRICE_DISCLAIMER} We may earn a commission at no extra cost to you.</p>
         <div className="grid gap-3 sm:grid-cols-3">
           <AffiliateLink href={src(flight, "trip-flight")}>
             <Plane aria-hidden /> Flights

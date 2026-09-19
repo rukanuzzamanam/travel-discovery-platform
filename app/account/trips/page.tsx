@@ -20,7 +20,7 @@ export default async function SavedTripsPage() {
               <Link href={`/trips/${t.shareToken}`} className="block rounded-2xl border bg-card p-5 hover:shadow-md">
                 <p className="font-semibold">{t.title}</p>
                 <p className="text-sm text-muted-foreground">{t.startDate.toISOString().slice(0, 10)} · {t.travellers} travellers</p>
-                <p className="mt-2 text-lg font-bold">{formatUsd(t.totalEstimateUsd)} <span className="text-xs font-normal text-muted-foreground">estimate</span></p>
+                <p className="mt-2 text-lg font-bold">{formatUsd(t.totalEstimateUsd)} <span className="text-xs font-normal text-muted-foreground">estimated</span></p>
               </Link>
             </li>
           ))}
