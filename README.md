@@ -84,6 +84,7 @@ E2E_BASE_URL=http://localhost:3100 npm run test:e2e   # 46 HTTP tests (SEO, redi
 
 - [Architecture](docs/architecture.md) · [Database](docs/database.md) · [Travelpayouts](docs/travelpayouts.md)
 - [SEO](docs/seo.md) · [Deployment](docs/deployment.md) · [Revenue tracking](docs/revenue-tracking.md)
+- [Development workflow and rollback](docs/development-workflow.md)
 
 ## Admin setup
 
@@ -97,4 +98,4 @@ Set `NEXT_PUBLIC_GA_ID` for Google Analytics. Internal events are always collect
 
 ## Branching
 
-`main` (production) and `develop` (integration). Work on `feature/*` branches. CI (`.github/workflows/ci.yml`) runs install, migrate + seed, lint, typecheck, tests, build and e2e on every push and PR.
+`main` is production. Work on short-lived `feature/*`, `fix/*` or `chore/*` branches and merge via pull request (see [development workflow](docs/development-workflow.md)). CI (`.github/workflows/ci.yml`) runs install, migrate + seed, lint, typecheck, tests, build and e2e on every push and PR.
