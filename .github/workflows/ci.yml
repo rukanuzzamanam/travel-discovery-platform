@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: tripora
+          POSTGRES_PASSWORD: tripora
+          POSTGRES_DB: tripora
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U tripora"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://tripora:tripora@localhost:5432/tripora
+      AUTH_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      TRAVELPOUTS_PROJECT_ID: "123456"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Migrate and seed
+        run: |
+          npx prisma migrate deploy
+          npm run db:seed
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Test
+        run: npm test
+      - name: Build
+        run: npm run build

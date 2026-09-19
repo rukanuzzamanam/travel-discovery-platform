@@ -1,0 +1,674 @@
+// Tripora database schema. PostgreSQL + Prisma 7.
+// Conventions: UUID primary keys, createdAt/updatedAt on mutable rows, explicit indexes for hot paths.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/db/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────────── Enums ─────────────────────────────
+
+enum Interest {
+  BEACH
+  FOOD
+  NATURE
+  ADVENTURE
+  FAMILY
+  LUXURY
+  CULTURE
+  NIGHTLIFE
+  SHOPPING
+  RELAXATION
+}
+
+enum ProductType {
+  FLIGHT
+  HOTEL
+  ACTIVITY
+  CAR
+  INSURANCE
+}
+
+enum PriceKind {
+  ESTIMATE // Derived by our own model. Never presented as bookable.
+  PROVIDER // Returned by a travel provider.
+  USER // Entered by the user.
+}
+
+enum ConversionStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AdminRole {
+  ADMIN
+  EDITOR
+  ANALYST
+}
+
+enum TravelStyle {
+  BUDGET
+  MID_RANGE
+  LUXURY
+}
+
+enum TripItemType {
+  FLIGHT
+  HOTEL
+  FOOD
+  TRANSPORT
+  ACTIVITY
+  OTHER
+}
+
+enum SearchKind {
+  DISCOVER
+  TRIP_PLAN
+  FLIGHT
+  HOTEL
+}
+
+// ───────────────────────────── Users ─────────────────────────────
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  preferences       UserPreference?
+  adminUser         AdminUser?
+  trips             Trip[]
+  savedDestinations SavedDestination[]
+  savedItineraries  SavedItinerary[]
+  priceAlerts       PriceAlert[]
+  searches          Search[]
+  clicks            AffiliateClick[]
+}
+
+model UserPreference {
+  id              String      @id @default(uuid()) @db.Uuid
+  userId          String      @unique @db.Uuid
+  homeAirport     String?
+  currency        String      @default("USD")
+  travelStyle     TravelStyle @default(MID_RANGE)
+  interests       Interest[]
+  emailAlerts     Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AdminUser {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @unique @db.Uuid
+  role      AdminRole @default(EDITOR)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SavedDestination {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @db.Uuid
+  destinationId String   @db.Uuid
+  createdAt     DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, destinationId])
+}
+
+model SavedItinerary {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid
+  itineraryId String   @db.Uuid
+  createdAt   DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itinerary Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itineraryId])
+}
+
+model PriceAlert {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @db.Uuid
+  destinationId String   @db.Uuid
+  origin        String // IATA code
+  maxPriceUsd   Int
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([destinationId, origin])
+}
+
+// ───────────────────────────── Geography ─────────────────────────────
+
+model Country {
+  id           String   @id @default(uuid()) @db.Uuid
+  code         String   @unique // ISO 3166-1 alpha-2
+  name         String
+  slug         String   @unique
+  currency     String
+  region       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  cities       City[]
+  destinations Destination[]
+}
+
+model City {
+  id        String   @id @default(uuid()) @db.Uuid
+  slug      String   @unique
+  name      String
+  countryId String   @db.Uuid
+  latitude  Float
+  longitude Float
+  timezone  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  country      Country       @relation(fields: [countryId], references: [id])
+  airports     Airport[]
+  destinations Destination[]
+
+  @@index([countryId])
+}
+
+model Airport {
+  id        String   @id @default(uuid()) @db.Uuid
+  iataCode  String   @unique
+  name      String
+  cityId    String   @db.Uuid
+  latitude  Float
+  longitude Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  city City @relation(fields: [cityId], references: [id])
+
+  @@index([cityId])
+}
+
+model Destination {
+  id               String        @id @default(uuid()) @db.Uuid
+  slug             String        @unique
+  name             String
+  cityId           String?       @db.Uuid
+  countryId        String        @db.Uuid
+  airportCode      String // Primary IATA code for flight/hotel links
+  tagline          String
+  overview         String
+  heroImage        String
+  heroImageAlt     String
+  bestMonths       Int[] // 1-12
+  avoidMonths      Int[] // 1-12
+  interestScores   Json // Record<Interest, 0..5>
+  familyScore      Int // 1..5
+  recommendedDaysMin Int
+  recommendedDaysMax Int
+  // Daily cost model in USD, per person unless noted. All ESTIMATES.
+  hotelNightBudget  Int // per room
+  hotelNightMid     Int
+  hotelNightLuxury  Int
+  dailyFood         Int // per person
+  dailyTransport    Int // per person
+  dailyActivities   Int // per person
+  activities       Json // string[] highlights
+  transportTips    String
+  foodHighlights   String
+  travelTips       Json // string[]
+  faq              Json // {q,a}[]
+  relatedSlugs     String[]
+  seoTitle         String?
+  seoDescription   String?
+  status           ContentStatus @default(PUBLISHED)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  country      Country            @relation(fields: [countryId], references: [id])
+  city         City?              @relation(fields: [cityId], references: [id])
+  prices       DestinationPrice[]
+  itineraries  Itinerary[]
+  guides       TravelGuide[]
+  deals        Deal[]
+  trips        Trip[]
+  clicks       AffiliateClick[]
+  links        AffiliateLink[]
+  searchResults SearchResult[]
+  saved        SavedDestination[]
+  alerts       PriceAlert[]
+  flights      Flight[]
+  hotels       Hotel[]
+  activityItems Activity[]
+  cars         CarRental[]
+
+  @@index([status])
+  @@index([airportCode])
+  @@index([countryId])
+}
+
+model DestinationPrice {
+  id            String   @id @default(uuid()) @db.Uuid
+  destinationId String   @db.Uuid
+  origin        String // IATA
+  kind          PriceKind
+  flightUsd     Int
+  currency      String   @default("USD")
+  validFrom     DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@unique([destinationId, origin, kind])
+  @@index([origin])
+}
+
+model PriceSnapshot {
+  id         String      @id @default(uuid()) @db.Uuid
+  provider   String
+  productType ProductType
+  origin     String?
+  destination String
+  priceUsd   Int
+  kind       PriceKind   @default(PROVIDER)
+  capturedAt DateTime    @default(now())
+
+  @@index([productType, origin, destination, capturedAt])
+  @@index([capturedAt])
+}
+
+// ───────────────────────────── Search ─────────────────────────────
+
+model Search {
+  id          String     @id @default(uuid()) @db.Uuid
+  sessionId   String
+  userId      String?    @db.Uuid
+  kind        SearchKind
+  origin      String? // IATA
+  destination String?
+  budgetUsd   Int?
+  startDate   DateTime?
+  endDate     DateTime?
+  nights      Int?
+  travellers  Int?
+  interests   Interest[]
+  params      Json // full validated input
+  resultCount Int        @default(0)
+  createdAt   DateTime   @default(now())
+
+  user    User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  results SearchResult[]
+
+  @@index([origin])
+  @@index([destination])
+  @@index([createdAt])
+  @@index([sessionId])
+  @@index([userId])
+}
+
+model SearchResult {
+  id            String   @id @default(uuid()) @db.Uuid
+  searchId      String   @db.Uuid
+  destinationId String   @db.Uuid
+  rank          Int
+  score         Float
+  totalUsd      Int
+  metadata      Json // scoring breakdown + cost breakdown
+  createdAt     DateTime @default(now())
+
+  search      Search      @relation(fields: [searchId], references: [id], onDelete: Cascade)
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@unique([searchId, destinationId])
+  @@index([destinationId])
+}
+
+// ───────────────────────────── Trips ─────────────────────────────
+
+model Trip {
+  id            String      @id @default(uuid()) @db.Uuid
+  userId        String?     @db.Uuid
+  shareToken    String      @unique @default(uuid())
+  title         String
+  origin        String
+  destinationId String      @db.Uuid
+  startDate     DateTime
+  endDate       DateTime
+  travellers    Int
+  budgetUsd     Int?
+  style         TravelStyle
+  interests     Interest[]
+  totalEstimateUsd Int
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  user        User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  destination Destination @relation(fields: [destinationId], references: [id])
+  days        TripDay[]
+  items       TripItem[]
+
+  @@index([userId])
+  @@index([destinationId])
+}
+
+model TripDay {
+  id        String   @id @default(uuid()) @db.Uuid
+  tripId    String   @db.Uuid
+  dayNumber Int
+  title     String
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  trip       Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  activities TripActivity[]
+
+  @@unique([tripId, dayNumber])
+}
+
+// Budget line item for a trip (flight, hotel, food...). priceKind says where the number came from.
+model TripItem {
+  id        String       @id @default(uuid()) @db.Uuid
+  tripId    String       @db.Uuid
+  type      TripItemType
+  label     String
+  amountUsd Int
+  priceKind PriceKind    @default(ESTIMATE)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+}
+
+// Something scheduled on a specific day of a trip.
+model TripActivity {
+  id          String    @id @default(uuid()) @db.Uuid
+  tripDayId   String    @db.Uuid
+  position    Int
+  title       String
+  category    String // activity | restaurant | attraction | transport
+  durationMin Int?
+  costUsd     Int       @default(0)
+  priceKind   PriceKind @default(ESTIMATE)
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tripDay TripDay @relation(fields: [tripDayId], references: [id], onDelete: Cascade)
+
+  @@index([tripDayId, position])
+}
+
+// ───────────────────────────── Product catalogue (provider-sourced) ─────────────────────────────
+// Rows here are cached provider results or curated placeholders. Prices stored with a kind.
+
+model Flight {
+  id            String    @id @default(uuid()) @db.Uuid
+  provider      String
+  origin        String
+  destinationId String    @db.Uuid
+  priceUsd      Int
+  priceKind     PriceKind @default(PROVIDER)
+  departDate    DateTime?
+  returnDate    DateTime?
+  fetchedAt     DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@index([origin, destinationId])
+  @@index([provider])
+}
+
+model Hotel {
+  id            String    @id @default(uuid()) @db.Uuid
+  provider      String
+  name          String
+  destinationId String    @db.Uuid
+  nightlyUsd    Int?
+  priceKind     PriceKind @default(PROVIDER)
+  fetchedAt     DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@index([destinationId])
+  @@index([provider])
+}
+
+model Activity {
+  id            String    @id @default(uuid()) @db.Uuid
+  provider      String
+  title         String
+  destinationId String    @db.Uuid
+  priceUsd      Int?
+  priceKind     PriceKind @default(ESTIMATE)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@index([destinationId])
+}
+
+model CarRental {
+  id            String    @id @default(uuid()) @db.Uuid
+  provider      String
+  destinationId String    @db.Uuid
+  dailyUsd      Int?
+  priceKind     PriceKind @default(ESTIMATE)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@index([destinationId])
+}
+
+// ───────────────────────────── Affiliate ─────────────────────────────
+
+model AffiliateProgram {
+  id          String   @id @default(uuid()) @db.Uuid
+  provider    String   @unique // "travelpayouts"
+  name        String
+  productTypes ProductType[]
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// An internal, opaque link record. /go/<type>/<id> resolves to one of these.
+// It stores *parameters*, never a target URL: the URL is built by the provider at click time.
+model AffiliateLink {
+  id            String      @id @default(uuid()) @db.Uuid
+  provider      String
+  productType   ProductType
+  destinationId String?     @db.Uuid
+  params        Json // origin, destination, dates, adults ...
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  destination Destination?     @relation(fields: [destinationId], references: [id], onDelete: SetNull)
+  clicks      AffiliateClick[]
+
+  @@index([provider])
+  @@index([productType])
+  @@index([destinationId])
+}
+
+model AffiliateClick {
+  id              String      @id @default(uuid()) @db.Uuid
+  linkId          String?     @db.Uuid
+  sessionId       String
+  userId          String?     @db.Uuid
+  provider        String
+  productType     ProductType
+  destinationId   String?     @db.Uuid
+  sourcePage      String
+  sourceComponent String?
+  campaign        String?
+  affiliateUrl    String
+  subId           String      @unique
+  createdAt       DateTime    @default(now())
+
+  link        AffiliateLink? @relation(fields: [linkId], references: [id], onDelete: SetNull)
+  user        User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  destination Destination?   @relation(fields: [destinationId], references: [id], onDelete: SetNull)
+  conversions Conversion[]
+
+  @@index([provider])
+  @@index([createdAt])
+  @@index([sourcePage])
+  @@index([destinationId])
+  @@index([sessionId])
+}
+
+model Conversion {
+  id               String           @id @default(uuid()) @db.Uuid
+  affiliateClickId String?          @db.Uuid
+  provider         String
+  productType      ProductType
+  commission       Decimal?         @db.Decimal(12, 2) // nullable: reporting can lag
+  currency         String           @default("USD")
+  status           ConversionStatus @default(PENDING)
+  bookingReference String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  click AffiliateClick? @relation(fields: [affiliateClickId], references: [id], onDelete: SetNull)
+
+  @@index([affiliateClickId])
+  @@index([provider, status])
+  @@index([createdAt])
+}
+
+// ───────────────────────────── Content ─────────────────────────────
+
+model TravelGuide {
+  id             String        @id @default(uuid()) @db.Uuid
+  slug           String        @unique
+  title          String
+  description    String
+  heroImage      String
+  heroImageAlt   String
+  content        String // Markdown
+  faq            Json          @default("[]")
+  seoTitle       String?
+  seoDescription String?
+  destinationId  String?       @db.Uuid
+  status         ContentStatus @default(PUBLISHED)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  destination Destination? @relation(fields: [destinationId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([destinationId])
+}
+
+model Itinerary {
+  id             String        @id @default(uuid()) @db.Uuid
+  slug           String        @unique
+  title          String
+  description    String
+  heroImage      String
+  heroImageAlt   String
+  destinationId  String        @db.Uuid
+  durationDays   Int
+  style          TravelStyle   @default(MID_RANGE)
+  days           Json // ItineraryDay[] (validated by Zod in lib/travel/itinerary-schema.ts)
+  faq            Json          @default("[]")
+  seoTitle       String?
+  seoDescription String?
+  status         ContentStatus @default(PUBLISHED)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  destination Destination      @relation(fields: [destinationId], references: [id])
+  saved       SavedItinerary[]
+
+  @@index([status])
+  @@index([destinationId])
+}
+
+model Deal {
+  id             String        @id @default(uuid()) @db.Uuid
+  slug           String        @unique
+  title          String
+  description    String
+  heroImage      String
+  heroImageAlt   String
+  destinationId  String        @db.Uuid
+  productType    ProductType
+  origin         String?
+  fromPriceUsd   Int?
+  priceKind      PriceKind     @default(ESTIMATE)
+  seoTitle       String?
+  seoDescription String?
+  status         ContentStatus @default(PUBLISHED)
+  expiresAt      DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  destination Destination @relation(fields: [destinationId], references: [id])
+
+  @@index([status, expiresAt])
+  @@index([destinationId])
+}
+
+// ───────────────────────────── Marketing / analytics ─────────────────────────────
+
+model NewsletterSubscriber {
+  id          String   @id @default(uuid()) @db.Uuid
+  email       String   @unique
+  preferences String[] // deals | weekend | inspiration | budget
+  source      String
+  confirmed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AnalyticsEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  sessionId   String
+  userId      String?  @db.Uuid
+  path        String?
+  destination String?
+  properties  Json     @default("{}")
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([name, createdAt])
+  @@index([sessionId])
+  @@index([path])
+}
