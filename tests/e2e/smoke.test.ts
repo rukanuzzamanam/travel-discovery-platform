@@ -12,8 +12,11 @@ const newsletter: string[] = [];
 /** Minimal cookie jar so we can act as a signed-in user. */
 class Client {
   cookies = new Map<string, string>();
+  // Each simulated visitor gets its own IP so the app's per-IP rate limits don't couple tests or runs together.
+  ip = `10.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}`;
   async fetch(path: string, init: RequestInit & { json?: unknown } = {}) {
     const headers = new Headers(init.headers);
+    headers.set("x-forwarded-for", this.ip);
     if (this.cookies.size) headers.set("cookie", [...this.cookies].map(([k, v]) => `${k}=${v}`).join("; "));
     if (init.json !== undefined) {
       headers.set("content-type", "application/json");
